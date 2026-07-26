@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudVault AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a10;
+    --sidebar-bg: rgba(10, 18, 26, 0.85);
+    --glass: rgba(16, 28, 38, 0.55);
+    --border: rgba(0, 229, 255, 0.16);
+    --border-bright: rgba(0, 229, 255, 0.4);
+    --cyan: #22e2ff;
+    --green: #4dffb0;
+    --amber: #ffcf6b;
+    --danger: #ff6b7a;
+    --text: #d9f4f9;
+    --text-dim: #6d8994;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  body.light-theme {
+    --bg: #f4f7f9;
+    --sidebar-bg: rgba(255, 255, 255, 0.9);
+    --glass: rgba(255, 255, 255, 0.75);
+    --border: rgba(0, 130, 150, 0.16);
+    --border-bright: rgba(0, 130, 150, 0.4);
+    --cyan: #0090a8;
+    --green: #0a9e5e;
+    --amber: #b5790a;
+    --danger: #c93a4e;
+    --text: #16232a;
+    --text-dim: #5c7580;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse 900px 500px at 20% -10%, rgba(0,229,255,0.07), transparent), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---- Sidebar ---- */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 28px;
+  }
+
+  .brand svg { flex-shrink: 0; }
+
+  .brand-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    background: linear-gradient(135deg, #eaffff, #22e2ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .nav-item:hover { background: rgba(34,226,255,0.06); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(34,226,255,0.1);
+    color: var(--cyan);
+    box-shadow: inset 2px 0 0 var(--cyan);
+  }
+
+  .nav-item svg { opacity: 0.85; flex-shrink: 0; }
+  .nav-item.active svg { opacity: 1; }
+
+  .upload-fab {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--cyan);
+    color: #04141a;
+    border: none;
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 18px;
+  }
+  .upload-fab:hover { background: #6febff; }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: auto;
+    width: 100%;
+  }
+  .theme-toggle:hover { background: rgba(34,226,255,0.06); box-shadow: none; }
+
+  .sidebar { display: flex; flex-direction: column; }
+
+  .upload-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .upload-modal-overlay.active { display: flex; }
+  .upload-modal-overlay .chat-panel { width: 90%; max-width: 480px; height: auto; }
+
+  .storage-bar-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    border-radius: 20px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .storage-bar-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .fav-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    line-height: 1;
+  }
+  .fav-star:hover { background: none; box-shadow: none; }
+
+  .recent-emails { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .recent-email-chip {
+    background: rgba(34,226,255,0.08);
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .recent-email-chip:hover { background: rgba(34,226,255,0.15); box-shadow: none; }
+
+  /* ---- Main content ---- */
+  .content {
+    flex: 1;
+    padding: 40px 44px;
+    max-width: 1100px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+
+  .page-subtitle { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  button.pill {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.pill:hover { background: rgba(34,226,255,0.08); border-color: var(--border-bright); }
+
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  /* ---- Stats ---- */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card { padding: 18px 20px; }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--cyan);
+    text-shadow: 0 0 16px rgba(34,226,255,0.35);
+  }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ---- Upload dropzone ---- */
+  .dropzone-card { padding: 28px; margin-bottom: 28px; }
+
+  .drop-zone {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 40px 24px;
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .drop-zone.drag-over { border-color: var(--border-bright); background: rgba(34,226,255,0.06); }
+
+  .drop-zone-icon { margin-bottom: 12px; opacity: 0.7; }
+  .drop-zone-text { font-size: 14px; color: var(--text); margin-bottom: 4px; font-weight: 500; }
+  .drop-zone-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; }
+
+  .upload-row { display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
+
+  input[type="file"] { color: var(--text-dim); font-family: 'Inter', sans-serif; font-size: 13px; }
+  input[type="file"]::file-selector-button {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+    padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-right: 12px;
+  }
+
+  button.primary {
+    background: var(--cyan); color: #04141a; border: none; padding: 10px 22px;
+    border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;
+    transition: box-shadow 0.15s ease, background 0.15s ease;
+  }
+  button.primary:hover:not(:disabled) { background: #6febff; box-shadow: 0 0 20px rgba(34,226,255,0.45); }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-line { margin-top: 14px; font-family: var(--mono); font-size: 13px; color: var(--text-dim); min-height: 18px; text-align: center; }
+
+  /* ---- File rows (recent files + my files) ---- */
+  .section-label {
+    font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .refresh-link { background: none; color: var(--cyan); padding: 0; font-family: var(--mono); font-size: 12px; text-decoration: underline; cursor: pointer; border: none; }
+  .refresh-link:hover { background: none; box-shadow: none; color: #6febff; }
+
+  .search-box {
+    width: 100%; background: var(--glass); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 8px; font-family: var(--mono); font-size: 13px;
+    margin-bottom: 20px; backdrop-filter: blur(10px);
+  }
+  .search-box:focus { outline: none; border-color: var(--border-bright); }
+  .search-box::placeholder { color: var(--text-dim); }
+
+  .doc-grid { display: flex; flex-direction: column; gap: 14px; }
+
+  .doc-card { padding: 20px 24px; position: relative; overflow: hidden; }
+  .doc-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--cyan); box-shadow: 0 0 12px var(--cyan);
+  }
+  .doc-card.processing::before { background: var(--amber); box-shadow: 0 0 12px var(--amber); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .doc-name-row { display: flex; align-items: center; gap: 10px; }
+  .file-icon { flex-shrink: 0; opacity: 0.85; }
+  .doc-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; color: var(--text); }
+  .doc-date { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 4px; margin-left: 34px; }
+
+  .doc-thumb {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    display: block;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .badge {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; border: 1px solid transparent;
+  }
+  .badge.summarized { background: rgba(77,255,176,0.1); color: var(--green); border-color: rgba(77,255,176,0.3); }
+  .badge.uploaded { background: rgba(255,207,107,0.1); color: var(--amber); border-color: rgba(255,207,107,0.3); }
+
+  .doc-summary { font-size: 14px; line-height: 1.6; color: var(--text); opacity: 0.85; white-space: pre-wrap; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 14px; font-family: var(--mono); }
+  .doc-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+  .folder-tag {
+    color: var(--cyan);
+    opacity: 0.9;
+  }
+
+  .folder-filter {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .folder-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .folder-controls .folder-filter { margin-bottom: 16px; }
+  #newFolderInput { min-width: 160px; }
+
+  .study-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .study-tab {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 8px 4px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .study-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+  .study-tab:hover { background: none; box-shadow: none; }
+
+  .mcq-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .mcq-question { font-weight: 600; font-size: 14px; margin-bottom: 12px; }
+  .mcq-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .mcq-option:hover { background: rgba(34,226,255,0.06); box-shadow: none; }
+  .mcq-option.correct { border-color: var(--green); background: rgba(77,255,176,0.1); }
+  .mcq-option.incorrect { border-color: var(--danger); background: rgba(255,107,122,0.1); }
+
+  .flashcard {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+  .flashcard .hint { font-family: var(--mono); font-size: 10px; color: var(--text-dim); position: absolute; margin-top: 60px; }
+  .flashcard-nav { display: flex; justify-content: space-between; align-items: center; }
+  .flashcard-nav span { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+
+  .action-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; font-size: 12px; font-weight: 500; font-family: var(--mono);
+    border-radius: 6px; cursor: pointer;
+  }
+  .action-btn:hover:not(:disabled) { background: rgba(34,226,255,0.08); }
+  .action-btn.danger { border-color: rgba(255,107,122,0.4); color: var(--danger); }
+  .action-btn.danger:hover:not(:disabled) { background: rgba(255,107,122,0.08); }
+
+  /* recent file row (compact, dashboard view) */
+  .recent-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 4px; border-bottom: 1px solid var(--border);
+  }
+  .recent-row:last-child { border-bottom: none; }
+  .recent-info { display: flex; align-items: center; gap: 12px; }
+  .recent-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .recent-status { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ---- Auth ---- */
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .auth-panel { padding: 32px; width: 100%; max-width: 380px; }
+  .auth-field { margin-bottom: 12px; }
+  .auth-field input {
+    width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 6px; font-size: 14px;
+  }
+  .auth-field input:focus { outline: none; border-color: var(--border-bright); }
+  #signInView button, #signUpView button, #confirmView button { width: 100%; margin-top: 4px; }
+  .auth-switch { margin-top: 16px; font-size: 13px; color: var(--text-dim); text-align: center; }
+  .auth-switch a { color: var(--cyan); text-decoration: underline; cursor: pointer; }
+  .auth-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); margin-bottom: 6px; }
+  .auth-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin: 0 0 20px; }
+
+  /* ---- Settings ---- */
+  .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 13px; color: var(--text-dim); }
+  .settings-value { font-family: var(--mono); font-size: 14px; color: var(--text); }
+
+  .chat-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-overlay.active { display: flex; }
+
+  .chat-panel {
+    width: 90%;
+    max-width: 560px;
+    height: 70vh;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .chat-bubble.user {
+    align-self: flex-end;
+    background: rgba(34,226,255,0.14);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+  }
+  .chat-bubble.assistant {
+    align-self: flex-start;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .chat-bubble.loading { color: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+
+  .chat-input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .chat-input-row input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--border-bright); }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .sidebar { width: 72px; }
+    .brand-name, .nav-item span.label { display: none; }
+    .content { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-panel glass" id="authPanel">
+    <div id="signInView">
+      <div class="auth-eyebrow">// document intake</div>
+      <div class="auth-title">Sign in</div>
+      <div class="recent-emails" id="recentEmails"></div>
+      <div class="auth-field"><input type="email" id="signinEmail" placeholder="Email"></div>
+      <div class="auth-field"><input type="password" id="signinPassword" placeholder="Password"></div>
+      <button class="primary" id="signinBtn">Sign in</button>
+      <div class="status-line" id="authStatus"></div>
+      <div class="auth-switch">New here? <a href="#" id="showSignUp">Create an account</a></div>
+    </div>
+    <div id="signUpView" style="display:none;">
+      <div class="auth-eyebrow">// document intake</div>
+      <div class="auth-title">Create account</div>
+      <div class="auth-field"><input type="email" id="signupEmail" placeholder="Email"></div>
+      <div class="auth-field"><input type="password" id="signupPassword" placeholder="Password (min 8 characters)"></div>
+      <button class="primary" id="signupBtn">Sign up</button>
+      <div class="status-line" id="signupStatus"></div>
+      <div class="auth-switch">Already have an account? <a href="#" id="showSignIn">Sign in</a></div>
+    </div>
+    <div id="confirmView" style="display:none;">
+      <div class="auth-eyebrow">// document intake</div>
+      <div class="auth-title">Check your email</div>
+      <p class="page-subtitle" style="margin-bottom:16px;">Enter the verification code we sent you.</p>
+      <div class="auth-field"><input type="text" id="confirmCode" placeholder="Verification code"></div>
+      <button class="primary" id="confirmBtn">Confirm</button>
+      <div class="status-line" id="confirmStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell" id="appShell" style="display:none;">
+  <div class="sidebar">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#22e2ff"/>
+            <stop offset="1" stop-color="#4dffb0"/>
+          </linearGradient>
+        </defs>
+        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="url(#logoGrad)" fill-opacity="0.14" stroke="url(#logoGrad)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M3 7l9 5 9-5" stroke="url(#logoGrad)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M12 12v10" stroke="url(#logoGrad)" stroke-width="1.6" stroke-linejoin="round" stroke-opacity="0.5"/>
+      </svg>
+      <span class="brand-name">CloudVault AI</span>
+    </div>
+
+    <button class="upload-fab" id="uploadFabBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="#04141a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke="#04141a" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="label">Upload</span>
+    </button>
+
+    <div class="nav-item active" data-view="dashboard">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span class="label">Dashboard</span>
+    </div>
+    <div class="nav-item" data-view="files">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span class="label">My Files</span>
+    </div>
+    <div class="nav-item" data-view="favorites">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.2 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.2 6.1-.6L12 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="label">Favorites</span>
+    </div>
+    <div class="nav-item" data-view="learnhub">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="label">Learn Hub</span>
+    </div>
+    <div class="nav-item" data-view="settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19.4 13a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H4a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V4a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V10a1.65 1.65 0 001.51 1H20a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.3"/></svg>
+      <span class="label">Settings</span>
+    </div>
+
+    <button class="theme-toggle" id="themeToggleBtn">
+      <span id="themeIcon">\u2600\ufe0f</span>
+      <span class="label" id="themeLabel">Light mode</span>
+    </button>
+  </div>
+
+  <div class="upload-modal-overlay" id="uploadModalOverlay">
+    <div class="chat-panel glass" style="height:auto;">
+      <div class="chat-header">
+        <span>Upload a file</span>
+        <button class="refresh-link" id="uploadModalCloseBtn">close</button>
+      </div>
+      <div class="dropzone-card" style="padding:0; border:none; background:none;">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="#22e2ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke="#22e2ff" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <div class="drop-zone-text">Drag and drop a file here</div>
+          <div class="drop-zone-sub">or choose one below</div>
+          <div class="upload-row">
+            <input type="file" id="fileInput">
+            <button class="primary" id="uploadBtn">Upload</button>
+          </div>
+        </div>
+        <div class="status-line" id="statusLine"></div>
+        <pre id="debugBox" style="display:none; background:#000; color:#7fd; padding:14px; border-radius:6px; font-size:11px; overflow-x:auto; margin-top:12px; white-space:pre-wrap; word-break:break-all;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
+          <p class="page-subtitle">Manage your cloud files with AI</p>
+        </div>
+        <button class="pill" id="logoutBtn1">Sign out</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card glass"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Files</div></div>
+        <div class="stat-card glass"><div class="stat-value" id="statSummarized">0</div><div class="stat-label">AI Summaries</div></div>
+        <div class="stat-card glass"><div class="stat-value" id="statProcessing">0</div><div class="stat-label">Processing</div></div>
+        <div class="stat-card glass"><div class="stat-value" id="statToday">0</div><div class="stat-label">Uploads Today</div></div>
+      </div>
+
+      <div class="dropzone-card glass">
+        <div class="drop-zone" id="dropZoneDash" style="cursor:pointer;">
+          <div class="drop-zone-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="#22e2ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke="#22e2ff" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <div class="drop-zone-text">Drag & drop files, or click to go to Upload</div>
+          <div class="drop-zone-sub">PDF · TXT · DOCX and more</div>
+        </div>
+      </div>
+
+      <div class="section-label"><span>Recent Files</span><button class="refresh-link" id="refreshBtnDash">refresh</button></div>
+      <div class="glass" style="padding: 8px 20px;" id="recentFilesBox">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <!-- MY FILES VIEW -->
+    <div class="view" id="view-files">
+      <div class="page-header">
+        <div><h1 class="page-title">My Files</h1><p class="page-subtitle">All uploaded documents</p></div>
+        <button class="refresh-link" id="refreshBtnFiles">refresh</button>
+      </div>
+      <input type="text" class="search-box" id="searchBox" placeholder="// search by filename">
+      <div class="folder-controls">
+        <select class="folder-filter" id="folderFilter">
+          <option value="">All folders</option>
+        </select>
+        <input type="text" class="folder-filter" id="newFolderInput" placeholder="New folder name">
+        <button class="action-btn" id="newFolderBtn">+ Create</button>
+        <button class="action-btn danger" id="deleteFolderBtn" style="display:none;">Delete this folder</button>
+      </div>
+      <div class="doc-grid" id="docGrid"><div class="empty-state">Loading documents…</div></div>
+    </div>
+
+    <!-- FAVORITES VIEW -->
+    <div class="view" id="view-favorites">
+      <div class="page-header">
+        <div><h1 class="page-title">Favorites</h1><p class="page-subtitle">Files you've starred</p></div>
+        <button class="refresh-link" id="refreshBtnFav">refresh</button>
+      </div>
+      <div class="doc-grid" id="favGrid"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- LEARN HUB VIEW -->
+    <div class="view" id="view-learnhub">
+      <div class="page-header">
+        <div><h1 class="page-title">Learn Hub</h1><p class="page-subtitle">Practice with MCQs and flashcards across your documents</p></div>
+        <button class="refresh-link" id="refreshBtnLearn">refresh</button>
+      </div>
+      <div class="doc-grid" id="learnGrid"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div class="view" id="view-settings">
+      <div class="page-header"><div><h1 class="page-title">Settings</h1><p class="page-subtitle">Your account</p></div></div>
+      <div class="glass" style="padding: 8px 24px; margin-bottom:24px;">
+        <div class="settings-row"><span class="settings-label">Email</span><span class="settings-value" id="settingsEmail"></span></div>
+        <div class="settings-row"><span class="settings-label">Authentication</span><span class="settings-value">Amazon Cognito</span></div>
+        <div class="settings-row"><span class="settings-label">Storage region</span><span class="settings-value">ap-southeast-2</span></div>
+      </div>
+
+      <div class="section-label"><span>Storage</span></div>
+      <div class="glass" style="padding: 20px 24px; margin-bottom:24px;">
+        <div class="storage-bar-track"><div class="storage-bar-fill" id="storageBarFill"></div></div>
+        <div class="storage-bar-label" id="storageBarLabel">Calculating\u2026</div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="pill" id="logoutBtn2">Sign out</button>
+        <button class="pill" id="switchAccountBtn">Switch account</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-panel glass">
+    <div class="chat-header">
+      <span id="chatDocName">Chat</span>
+      <button class="refresh-link" id="chatCloseBtn">close</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ask something about this document…">
+      <button class="primary" id="chatSendBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="chat-overlay" id="shareOverlay">
+  <div class="chat-panel glass" style="height:auto;">
+    <div class="chat-header">
+      <span id="shareDocName">Share</span>
+      <button class="refresh-link" id="shareCloseBtn">close</button>
+    </div>
+    <div id="shareStep1">
+      <p class="page-subtitle" style="margin-bottom:14px;">Anyone with this link can view and download this file \u2014 no sign-in required.</p>
+      <select class="folder-filter" id="shareExpiry" style="width:100%; margin-bottom:14px;">
+        <option value="1">Expires in 1 hour</option>
+        <option value="24" selected>Expires in 24 hours</option>
+        <option value="168">Expires in 7 days</option>
+      </select>
+      <button class="primary" id="shareGenerateBtn" style="width:100%;">Generate link</button>
+    </div>
+    <div id="shareStep2" style="display:none;">
+      <div class="auth-field"><input type="text" id="shareLinkOutput" readonly></div>
+      <button class="primary" id="shareCopyBtn" style="width:100%;">Copy link</button>
+    </div>
+    <div class="status-line" id="shareStatus"></div>
+  </div>
+</div>
+
+<div class="chat-overlay" id="studyOverlay">
+  <div class="chat-panel glass" style="height:auto; max-height:80vh;">
+    <div class="chat-header">
+      <span id="studyDocName">Study Assistant</span>
+      <button class="refresh-link" id="studyCloseBtn">close</button>
+    </div>
+
+    <div id="studyEmptyState">
+      <p class="page-subtitle" style="margin-bottom:16px;">Generate multiple-choice questions and flashcards from this document.</p>
+      <button class="primary" id="studyGenerateBtn" style="width:100%;">Generate Study Material</button>
+      <div class="status-line" id="studyStatus"></div>
+    </div>
+
+    <div id="studyResults" style="display:none; overflow-y:auto;">
+      <div class="study-tabs">
+        <button class="study-tab active" id="tabMcq">MCQs</button>
+        <button class="study-tab" id="tabFlashcards">Flashcards</button>
+      </div>
+      <div id="mcqPanel"></div>
+      <div id="flashcardPanel" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Configuration ----
+  const API_BASE = 'https://9ew9unihk5.execute-api.ap-southeast-2.amazonaws.com';
+  const COGNITO_REGION = 'ap-southeast-2';
+  const COGNITO_CLIENT_ID = 't7ouajbl9e8tghjoir3lfob2g';
+  const COGNITO_ENDPOINT = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`;
+
+  let allDocs = [];
+
+  // Every request to our API must prove who's asking - this wraps fetch()
+  // to automatically attach the signed-in user's token.
+  async function authFetch(url, options = {}) {
+    const idToken = localStorage.getItem('cv_idToken');
+    const headers = { ...(options.headers || {}), 'Authorization': `Bearer ${idToken}` };
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401 || res.status === 403) {
+      // Token expired or invalid - send back to sign-in rather than
+      // showing a confusing silent failure.
+      if (res.status === 401) {
+        localStorage.removeItem('cv_idToken');
+        localStorage.removeItem('cv_accessToken');
+        localStorage.removeItem('cv_refreshToken');
+        localStorage.removeItem('cv_email');
+        location.reload();
+      }
+    }
+    return res;
+  }
+
+  async function cognitoRequest(action, payload) {
+    const res = await fetch(COGNITO_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-amz-json-1.1', 'X-Amz-Target': `AWSCognitoIdentityProviderService.${action}` },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || data.__type || 'Request failed');
+    return data;
+  }
+
+  const authWrap = document.getElementById('authWrap');
+  const appShell = document.getElementById('appShell');
+  const signInView = document.getElementById('signInView');
+  const signUpView = document.getElementById('signUpView');
+  const confirmView = document.getElementById('confirmView');
+
+  document.getElementById('showSignUp').onclick = (e) => { e.preventDefault(); signInView.style.display = 'none'; signUpView.style.display = 'block'; };
+  document.getElementById('showSignIn').onclick = (e) => { e.preventDefault(); signUpView.style.display = 'none'; signInView.style.display = 'block'; };
+
+  let pendingSignupEmail = '';
+
+  document.getElementById('signupBtn').onclick = async () => {
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    const status = document.getElementById('signupStatus');
+    if (!email || !password) { status.textContent = 'Enter an email and password.'; return; }
+    status.textContent = 'Creating account…';
+    try {
+      await cognitoRequest('SignUp', { ClientId: COGNITO_CLIENT_ID, Username: email, Password: password, UserAttributes: [{ Name: 'email', Value: email }] });
+      pendingSignupEmail = email;
+      signUpView.style.display = 'none';
+      confirmView.style.display = 'block';
+      status.textContent = '';
+    } catch (err) { status.textContent = err.message; }
+  };
+
+  document.getElementById('confirmBtn').onclick = async () => {
+    const code = document.getElementById('confirmCode').value.trim();
+    const status = document.getElementById('confirmStatus');
+    if (!code) { status.textContent = 'Enter the code from your email.'; return; }
+    status.textContent = 'Confirming…';
+    try {
+      await cognitoRequest('ConfirmSignUp', { ClientId: COGNITO_CLIENT_ID, Username: pendingSignupEmail, ConfirmationCode: code });
+      confirmView.style.display = 'none';
+      signInView.style.display = 'block';
+      document.getElementById('authStatus').textContent = 'Account confirmed — sign in below.';
+    } catch (err) { status.textContent = err.message; }
+  };
+
+  document.getElementById('signinBtn').onclick = async () => {
+    const email = document.getElementById('signinEmail').value.trim();
+    const password = document.getElementById('signinPassword').value;
+    const status = document.getElementById('authStatus');
+    if (!email || !password) { status.textContent = 'Enter an email and password.'; return; }
+    status.textContent = 'Signing in…';
+    try {
+      const result = await cognitoRequest('InitiateAuth', { AuthFlow: 'USER_PASSWORD_AUTH', ClientId: COGNITO_CLIENT_ID, AuthParameters: { USERNAME: email, PASSWORD: password } });
+      const tokens = result.AuthenticationResult;
+      localStorage.setItem('cv_idToken', tokens.IdToken);
+      localStorage.setItem('cv_accessToken', tokens.AccessToken);
+      localStorage.setItem('cv_refreshToken', tokens.RefreshToken);
+      localStorage.setItem('cv_email', email);
+      saveRecentEmail(email);
+      enterApp(email);
+    } catch (err) { status.textContent = err.message; }
+  };
+
+  function saveRecentEmail(email) {
+    let recents = JSON.parse(localStorage.getItem('cv_recentEmails') || '[]');
+    recents = [email, ...recents.filter(e => e !== email)].slice(0, 5);
+    localStorage.setItem('cv_recentEmails', JSON.stringify(recents));
+  }
+
+  function renderRecentEmails() {
+    const recents = JSON.parse(localStorage.getItem('cv_recentEmails') || '[]');
+    const box = document.getElementById('recentEmails');
+    if (!box) return;
+    box.innerHTML = recents.map(e => `<span class="recent-email-chip">${escapeHtml(e)}</span>`).join('');
+    box.querySelectorAll('.recent-email-chip').forEach((chip, i) => {
+      chip.addEventListener('click', () => {
+        document.getElementById('signinEmail').value = recents[i];
+        document.getElementById('signinPassword').focus();
+      });
+    });
+  }
+  renderRecentEmails();
+
+  function doLogout() {
+    localStorage.removeItem('cv_idToken');
+    localStorage.removeItem('cv_accessToken');
+    localStorage.removeItem('cv_refreshToken');
+    localStorage.removeItem('cv_email');
+    location.reload();
+  }
+  document.getElementById('logoutBtn1').onclick = doLogout;
+  document.getElementById('logoutBtn2').onclick = doLogout;
+  document.getElementById('switchAccountBtn').onclick = doLogout;
+
+  function enterApp(email) {
+    authWrap.style.display = 'none';
+    appShell.style.display = 'flex';
+    document.getElementById('settingsEmail').textContent = email;
+    const namePart = email.split('@')[0];
+    document.getElementById('welcomeTitle').textContent = `Welcome back, ${namePart}`;
+    loadFolders().then(loadDocuments);
+  }
+
+  const existingToken = localStorage.getItem('cv_idToken');
+  const existingEmail = localStorage.getItem('cv_email');
+  if (existingToken && existingEmail) enterApp(existingEmail);
+
+  // ---- View switching ----
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${item.dataset.view}`).classList.add('active');
+      if (item.dataset.view === 'favorites') renderFavorites();
+      if (item.dataset.view === 'learnhub') renderLearnHub();
+      if (item.dataset.view === 'settings') renderStorage();
+    });
+  });
+  document.getElementById('dropZoneDash').addEventListener('click', () => {
+    openUploadModal();
+  });
+
+  // ---- Upload modal ----
+  const uploadModalOverlay = document.getElementById('uploadModalOverlay');
+  function openUploadModal() { uploadModalOverlay.classList.add('active'); }
+  function closeUploadModal() { uploadModalOverlay.classList.remove('active'); }
+  document.getElementById('uploadFabBtn').addEventListener('click', openUploadModal);
+  document.getElementById('uploadModalCloseBtn').addEventListener('click', closeUploadModal);
+  uploadModalOverlay.addEventListener('click', (e) => { if (e.target === uploadModalOverlay) closeUploadModal(); });
+
+  // ---- Theme toggle ----
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeLabel = document.getElementById('themeLabel');
+
+  function applyTheme(theme) {
+    document.body.classList.toggle('light-theme', theme === 'light');
+    themeIcon.textContent = theme === 'light' ? '\u{1F319}' : '\u2600\ufe0f';
+    themeLabel.textContent = theme === 'light' ? 'Dark mode' : 'Light mode';
+  }
+  const savedTheme = localStorage.getItem('cv_theme') || 'dark';
+  applyTheme(savedTheme);
+  themeToggleBtn.addEventListener('click', () => {
+    const next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+    localStorage.setItem('cv_theme', next);
+    applyTheme(next);
+  });
+
+  // ---- App logic ----
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const statusLine = document.getElementById('statusLine');
+  const docGrid = document.getElementById('docGrid');
+  const debugBox = document.getElementById('debugBox');
+  const dropZone = document.getElementById('dropZone');
+  const searchBox = document.getElementById('searchBox');
+  const recentFilesBox = document.getElementById('recentFilesBox');
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function isToday(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
+  }
+
+  function getFileIcon(fileType) {
+    const icons = {
+      image: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#22e2ff" stroke-width="1.6"/><circle cx="8.5" cy="8.5" r="1.5" stroke="#22e2ff" stroke-width="1.6"/><path d="M21 15l-5-5L5 21" stroke="#22e2ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      pdf: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="#22e2ff" stroke-width="1.6"/><path d="M14 2v6h6" stroke="#22e2ff" stroke-width="1.6"/></svg>',
+      text: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="#22e2ff" stroke-width="1.6"/><path d="M8 13h8M8 17h5" stroke="#22e2ff" stroke-width="1.4" stroke-linecap="round"/></svg>',
+      other: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="#6d8994" stroke-width="1.6"/></svg>'
+    };
+    return icons[fileType] || icons.other;
+  }
+
+  const thumbCache = {};
+
+  async function loadThumb(documentId, imgId) {
+    if (thumbCache[documentId]) {
+      const el = document.getElementById(imgId);
+      if (el) el.src = thumbCache[documentId];
+      return;
+    }
+    try {
+      const res = await authFetch(`${API_BASE}/download-url?document_id=${encodeURIComponent(documentId)}`);
+      const { downloadUrl } = await res.json();
+      thumbCache[documentId] = downloadUrl;
+      const el = document.getElementById(imgId);
+      if (el) el.src = downloadUrl;
+    } catch (err) { console.error('Thumbnail load failed:', err); }
+  }
+
+  function updateStats(docs) {
+    document.getElementById('statTotal').textContent = docs.length;
+    document.getElementById('statSummarized').textContent = docs.filter(d => d.status === 'summarized').length;
+    document.getElementById('statProcessing').textContent = docs.filter(d => d.status !== 'summarized').length;
+    document.getElementById('statToday').textContent = docs.filter(d => isToday(d.upload_date)).length;
+  }
+
+  function buildDocCard(doc) {
+    const isSummarized = doc.status === 'summarized';
+    const fileType = doc.file_type || 'other';
+    const thumbId = `thumb-${doc.document_id}`;
+    const isFav = !!doc.favorite;
+    return `
+      <div class="doc-card glass ${isSummarized ? '' : 'processing'}">
+        ${fileType === 'image' ? `<img class="doc-thumb" id="${thumbId}" alt="${escapeHtml(doc.filename)}">` : ''}
+        <div class="doc-top">
+          <div>
+            <div class="doc-name-row">${getFileIcon(fileType)}<span class="doc-name">${escapeHtml(doc.filename)}</span></div>
+            <div class="doc-date">${formatDate(doc.upload_date)} \u00b7 <span class="folder-tag">${escapeHtml(doc.folder || 'Uncategorized')}</span></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="fav-star" onclick="toggleFavorite('${doc.document_id}', ${isFav})">${isFav ? '\u2605' : '\u2606'}</button>
+            <span class="badge ${isSummarized ? 'summarized' : 'uploaded'}">${isSummarized ? 'Summarized' : 'Processing'}</span>
+          </div>
+        </div>
+        ${isSummarized ? `<div class="doc-summary">${escapeHtml(doc.summary)}</div>` : ''}
+        <div class="doc-actions">
+          <button class="action-btn" onclick="downloadDoc('${doc.document_id}')">Download</button>
+          ${isSummarized ? `<button class="action-btn" onclick="openChat('${doc.document_id}', '${escapeHtml(doc.filename)}')">Chat</button>` : ''}
+          ${isSummarized ? `<button class="action-btn" onclick="openStudy('${doc.document_id}', '${escapeHtml(doc.filename)}')">Study</button>` : ''}
+          <button class="action-btn" onclick="moveDoc('${doc.document_id}', '${escapeHtml(doc.folder || 'Uncategorized')}')">Move</button>
+          <button class="action-btn" onclick="openShare('${doc.document_id}', '${escapeHtml(doc.filename)}')">Share</button>
+          <button class="action-btn danger" onclick="deleteDoc('${doc.document_id}', '${escapeHtml(doc.filename)}')">Delete</button>
+        </div>
+      </div>`;
+  }
+
+  window.toggleFavorite = async function(documentId, currentlyFav) {
+    try {
+      await authFetch(`${API_BASE}/update-document`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: documentId, favorite: !currentlyFav })
+      });
+      loadDocuments();
+    } catch (err) {
+      console.error('Favorite toggle failed:', err);
+    }
+  };
+
+  function renderDocs(docs) {
+    if (docs.length === 0) { docGrid.innerHTML = '<div class="empty-state">// no documents match</div>'; return; }
+    docGrid.innerHTML = docs.map(buildDocCard).join('');
+    docs.forEach(doc => {
+      if ((doc.file_type || 'other') === 'image') {
+        loadThumb(doc.document_id, `thumb-${doc.document_id}`);
+      }
+    });
+  }
+
+  function renderFavorites() {
+    const favGrid = document.getElementById('favGrid');
+    const favs = allDocs.filter(d => d.favorite);
+    if (favs.length === 0) { favGrid.innerHTML = '<div class="empty-state">No favorites yet \u2014 star a file in My Files</div>'; return; }
+    favGrid.innerHTML = favs.map(buildDocCard).join('');
+    favs.forEach(doc => {
+      if ((doc.file_type || 'other') === 'image') loadThumb(doc.document_id, `thumb-${doc.document_id}`);
+    });
+  }
+
+  function renderLearnHub() {
+    const learnGrid = document.getElementById('learnGrid');
+    const studyDocs = allDocs.filter(d => d.study_material);
+    if (studyDocs.length === 0) {
+      learnGrid.innerHTML = '<div class="empty-state">No study material yet \u2014 open a document and click "Study" to generate MCQs and flashcards</div>';
+      return;
+    }
+    learnGrid.innerHTML = studyDocs.map(doc => `
+      <div class="doc-card glass">
+        <div class="doc-top">
+          <div class="doc-name-row">${getFileIcon(doc.file_type || 'other')}<span class="doc-name">${escapeHtml(doc.filename)}</span></div>
+        </div>
+        <div class="doc-actions">
+          <button class="action-btn" onclick="openStudy('${doc.document_id}', '${escapeHtml(doc.filename)}')">Practice</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderStorage() {
+    const totalBytes = allDocs.reduce((sum, d) => sum + (Number(d.file_size) || 0), 0);
+    const usedGB = totalBytes / (1024 ** 3);
+    const quotaGB = 15;
+    const pct = Math.min(100, (usedGB / quotaGB) * 100);
+    document.getElementById('storageBarFill').style.width = `${pct}%`;
+    document.getElementById('storageBarLabel').textContent =
+      `${usedGB < 0.01 ? '<0.01' : usedGB.toFixed(2)} GB of ${quotaGB} GB used`;
+  }
+
+  function renderRecent(docs) {
+    const recent = docs.slice(0, 5);
+    if (recent.length === 0) { recentFilesBox.innerHTML = '<div class="empty-state">No files yet — upload one to get started</div>'; return; }
+    recentFilesBox.innerHTML = recent.map(doc => `
+      <div class="recent-row">
+        <div class="recent-info">
+          ${getFileIcon(doc.file_type || 'other')}
+          <div>
+            <div class="recent-name">${escapeHtml(doc.filename)}</div>
+            <div class="recent-status">${doc.status === 'summarized' ? 'Summarized' : 'Processing'} · ${formatDate(doc.upload_date)}</div>
+          </div>
+        </div>
+        <button class="action-btn" onclick="downloadDoc('${doc.document_id}')">Download</button>
+      </div>
+    `).join('');
+  }
+
+  async function loadDocuments() {
+    try {
+      const res = await authFetch(`${API_BASE}/documents`);
+      const docs = await res.json();
+      docs.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date));
+      allDocs = docs;
+      updateStats(docs);
+      renderRecent(docs);
+      updateFolderOptions(docs);
+      applyFilter();
+      // Keep whichever secondary view is currently open in sync too
+      if (document.getElementById('view-favorites').classList.contains('active')) renderFavorites();
+      if (document.getElementById('view-learnhub').classList.contains('active')) renderLearnHub();
+      if (document.getElementById('view-settings').classList.contains('active')) renderStorage();
+    } catch (err) {
+      docGrid.innerHTML = '<div class="empty-state">Could not load documents. Check the API URL and try refresh.</div>';
+      recentFilesBox.innerHTML = '<div class="empty-state">Could not load documents.</div>';
+      console.error(err);
+    }
+  }
+
+  function applyFilter() {
+    const q = searchBox.value.trim().toLowerCase();
+    const folder = folderFilter.value;
+    let filtered = q ? allDocs.filter(d => d.filename.toLowerCase().includes(q)) : allDocs;
+    if (folder) filtered = filtered.filter(d => (d.folder || 'Uncategorized') === folder);
+    renderDocs(filtered);
+  }
+  searchBox.addEventListener('input', applyFilter);
+  document.getElementById('refreshBtnDash').addEventListener('click', loadDocuments);
+  document.getElementById('refreshBtnFiles').addEventListener('click', loadDocuments);
+  document.getElementById('refreshBtnFav').addEventListener('click', loadDocuments);
+  document.getElementById('refreshBtnLearn').addEventListener('click', loadDocuments);
+
+  async function downloadDoc(documentId) {
+    try {
+      const res = await authFetch(`${API_BASE}/download-url?document_id=${encodeURIComponent(documentId)}`);
+      const { downloadUrl, filename } = await res.json();
+      const a = document.createElement('a');
+      a.href = downloadUrl; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch (err) { alert('Download failed. Check console for details.'); console.error(err); }
+  }
+
+  async function deleteDoc(documentId, filename) {
+    if (!confirm(`Delete "${filename}"? This can't be undone.`)) return;
+    try {
+      await authFetch(`${API_BASE}/delete-document?document_id=${encodeURIComponent(documentId)}`, { method: 'DELETE' });
+      loadDocuments();
+    } catch (err) { alert('Delete failed. Check console for details.'); console.error(err); }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  async function uploadFile(file) {
+    if (!file) { statusLine.textContent = 'Choose a file first.'; return; }
+    uploadBtn.disabled = true;
+    statusLine.textContent = 'Requesting upload permission…';
+    try {
+      const urlRes = await authFetch(`${API_BASE}/upload-url?filename=${encodeURIComponent(file.name)}`);
+      const { uploadUrl } = await urlRes.json();
+      statusLine.textContent = 'Uploading to S3…';
+      const putRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' }, body: file });
+      if (!putRes.ok) {
+        const errText = await putRes.text();
+        console.error('S3 upload failed:', putRes.status, errText);
+        const codeMatch = errText.match(/<Code>(.*?)<\/Code>/);
+        const msgMatch = errText.match(/<Message>(.*?)<\/Message>/);
+        const shortError = codeMatch ? `${codeMatch[1]}: ${msgMatch ? msgMatch[1] : ''}` : errText.slice(0, 200);
+        statusLine.textContent = `Upload failed — ${shortError}`;
+        debugBox.style.display = 'block'; debugBox.textContent = errText;
+        return;
+      }
+      statusLine.textContent = 'Uploaded. Waiting for AI summary…';
+      fileInput.value = '';
+      await loadDocuments();
+      setTimeout(loadDocuments, 4000);
+      setTimeout(loadDocuments, 9000);
+      statusLine.textContent = 'Done. Summary will appear shortly — check My Files.';
+    } catch (err) {
+      statusLine.textContent = 'Upload failed. Check console for details.';
+      console.error(err);
+    } finally { uploadBtn.disabled = false; }
+  }
+
+  uploadBtn.addEventListener('click', () => uploadFile(fileInput.files[0]));
+
+  ['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); }));
+  ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); }));
+  dropZone.addEventListener('drop', (e) => { const file = e.dataTransfer.files[0]; if (file) uploadFile(file); });
+
+  // ---- Chat with document ----
+  const chatOverlay = document.getElementById('chatOverlay');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const chatSendBtn = document.getElementById('chatSendBtn');
+  const chatDocName = document.getElementById('chatDocName');
+
+  let activeChatDocId = null;
+  let chatHistory = [];
+
+  function openChat(documentId, filename) {
+    activeChatDocId = documentId;
+    chatHistory = [];
+    chatDocName.textContent = filename;
+    chatMessages.innerHTML = '<div class="chat-bubble assistant">Ask me anything about this document.</div>';
+    chatOverlay.classList.add('active');
+    chatInput.value = '';
+    chatInput.focus();
+  }
+
+  function closeChat() {
+    chatOverlay.classList.remove('active');
+    activeChatDocId = null;
+  }
+
+  document.getElementById('chatCloseBtn').addEventListener('click', closeChat);
+  chatOverlay.addEventListener('click', (e) => { if (e.target === chatOverlay) closeChat(); });
+
+  function appendBubble(role, text) {
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${role}`;
+    div.textContent = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+  }
+
+  async function sendChatMessage() {
+    const question = chatInput.value.trim();
+    if (!question || !activeChatDocId) return;
+
+    appendBubble('user', question);
+    chatInput.value = '';
+    chatSendBtn.disabled = true;
+    const loadingBubble = appendBubble('assistant loading', 'Thinking…');
+
+    try {
+      const res = await authFetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document_id: activeChatDocId,
+          question: question,
+          history: chatHistory
+        })
+      });
+      const data = await res.json();
+      loadingBubble.remove();
+
+      if (data.answer) {
+        appendBubble('assistant', data.answer);
+        chatHistory.push({ role: 'user', text: question });
+        chatHistory.push({ role: 'assistant', text: data.answer });
+      } else {
+        appendBubble('assistant', data.error || 'Something went wrong.');
+      }
+    } catch (err) {
+      loadingBubble.remove();
+      appendBubble('assistant', 'Failed to get a response. Check console for details.');
+      console.error(err);
+    } finally {
+      chatSendBtn.disabled = false;
+    }
+  }
+
+  chatSendBtn.addEventListener('click', sendChatMessage);
+  chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+  // ---- Folders ----
+  const folderFilter = document.getElementById('folderFilter');
+  const newFolderInput = document.getElementById('newFolderInput');
+  const newFolderBtn = document.getElementById('newFolderBtn');
+  const deleteFolderBtn = document.getElementById('deleteFolderBtn');
+
+  let registeredFolders = [];
+
+  async function loadFolders() {
+    try {
+      const res = await authFetch(`${API_BASE}/folders`);
+      const data = await res.json();
+      registeredFolders = data.folders || [];
+    } catch (err) {
+      console.error('Failed to load folders:', err);
+    }
+  }
+
+  function updateFolderOptions(docs) {
+    const fromDocs = docs.map(d => d.folder || 'Uncategorized');
+    const folders = [...new Set([...registeredFolders, ...fromDocs])].sort();
+    const current = folderFilter.value;
+    folderFilter.innerHTML = '<option value="">All folders</option>' +
+      folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    folderFilter.value = folders.includes(current) ? current : '';
+    deleteFolderBtn.style.display = folderFilter.value ? 'inline-block' : 'none';
+  }
+  folderFilter.addEventListener('change', () => {
+    deleteFolderBtn.style.display = folderFilter.value ? 'inline-block' : 'none';
+    applyFilter();
+  });
+
+  newFolderBtn.addEventListener('click', async () => {
+    const name = newFolderInput.value.trim();
+    if (!name) return;
+    try {
+      await authFetch(`${API_BASE}/create-folder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      newFolderInput.value = '';
+      await loadFolders();
+      updateFolderOptions(allDocs);
+    } catch (err) {
+      alert('Could not create folder.');
+      console.error(err);
+    }
+  });
+
+  deleteFolderBtn.addEventListener('click', async () => {
+    const name = folderFilter.value;
+    if (!name) return;
+    if (!confirm(`Delete folder "${name}"? Files inside will move to Uncategorized, not be deleted.`)) return;
+    try {
+      await authFetch(`${API_BASE}/delete-folder?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+      await loadFolders();
+      loadDocuments();
+    } catch (err) {
+      alert('Could not delete folder.');
+      console.error(err);
+    }
+  });
+
+  async function moveDoc(documentId, currentFolder) {
+    const folder = prompt('Move to folder:', currentFolder);
+    if (folder === null) return; // cancelled
+    try {
+      await authFetch(`${API_BASE}/update-document`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: documentId, folder: folder.trim() || 'Uncategorized' })
+      });
+      loadDocuments();
+    } catch (err) {
+      alert('Move failed. Check console for details.');
+      console.error(err);
+    }
+  }
+
+  // ---- Share ----
+  const shareOverlay = document.getElementById('shareOverlay');
+  const shareDocName = document.getElementById('shareDocName');
+  const shareStep1 = document.getElementById('shareStep1');
+  const shareStep2 = document.getElementById('shareStep2');
+  const shareStatus = document.getElementById('shareStatus');
+  const shareLinkOutput = document.getElementById('shareLinkOutput');
+
+  let activeShareDocId = null;
+
+  function openShare(documentId, filename) {
+    activeShareDocId = documentId;
+    shareDocName.textContent = `Share \u2014 ${filename}`;
+    shareStep1.style.display = 'block';
+    shareStep2.style.display = 'none';
+    shareStatus.textContent = '';
+    shareOverlay.classList.add('active');
+  }
+
+  document.getElementById('shareCloseBtn').addEventListener('click', () => shareOverlay.classList.remove('active'));
+  shareOverlay.addEventListener('click', (e) => { if (e.target === shareOverlay) shareOverlay.classList.remove('active'); });
+
+  document.getElementById('shareGenerateBtn').addEventListener('click', async () => {
+    const expiryHours = document.getElementById('shareExpiry').value;
+    shareStatus.textContent = 'Generating link…';
+    try {
+      const res = await authFetch(`${API_BASE}/create-share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: activeShareDocId, expiry_hours: parseInt(expiryHours) })
+      });
+      const data = await res.json();
+      if (data.shareUrl) {
+        shareLinkOutput.value = data.shareUrl;
+        shareStep1.style.display = 'none';
+        shareStep2.style.display = 'block';
+        shareStatus.textContent = '';
+      } else {
+        shareStatus.textContent = data.error || 'Could not generate a link.';
+      }
+    } catch (err) {
+      shareStatus.textContent = 'Failed to generate link.';
+      console.error(err);
+    }
+  });
+
+  document.getElementById('shareCopyBtn').addEventListener('click', () => {
+    shareLinkOutput.select();
+    navigator.clipboard.writeText(shareLinkOutput.value);
+    shareStatus.textContent = 'Copied to clipboard.';
+  });
+
+  // ---- Study Assistant ----
+  const studyOverlay = document.getElementById('studyOverlay');
+  const studyDocName = document.getElementById('studyDocName');
+  const studyEmptyState = document.getElementById('studyEmptyState');
+  const studyResults = document.getElementById('studyResults');
+  const studyStatus = document.getElementById('studyStatus');
+  const mcqPanel = document.getElementById('mcqPanel');
+  const flashcardPanel = document.getElementById('flashcardPanel');
+  const tabMcq = document.getElementById('tabMcq');
+  const tabFlashcards = document.getElementById('tabFlashcards');
+
+  let activeStudyDocId = null;
+  let flashcardIndex = 0;
+  let currentFlashcards = [];
+
+  function openStudy(documentId, filename) {
+    activeStudyDocId = documentId;
+    studyDocName.textContent = `Study \u2014 ${filename}`;
+    studyStatus.textContent = '';
+
+    const doc = allDocs.find(d => d.document_id === documentId);
+    const existing = doc && doc.study_material ? safeParse(doc.study_material) : null;
+
+    if (existing) {
+      renderStudyMaterial(existing);
+    } else {
+      studyEmptyState.style.display = 'block';
+      studyResults.style.display = 'none';
+    }
+    studyOverlay.classList.add('active');
+  }
+
+  function safeParse(str) {
+    try { return JSON.parse(str); } catch { return null; }
+  }
+
+  document.getElementById('studyCloseBtn').addEventListener('click', () => studyOverlay.classList.remove('active'));
+  studyOverlay.addEventListener('click', (e) => { if (e.target === studyOverlay) studyOverlay.classList.remove('active'); });
+
+  document.getElementById('studyGenerateBtn').addEventListener('click', async () => {
+    studyStatus.textContent = 'Generating\u2026 this can take up to 30 seconds.';
+    try {
+      const res = await authFetch(`${API_BASE}/generate-study-material`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: activeStudyDocId })
+      });
+      const data = await res.json();
+      if (data.error) {
+        studyStatus.textContent = data.error;
+        return;
+      }
+      renderStudyMaterial(data);
+      loadDocuments(); // refresh so it's cached for next time this modal opens
+    } catch (err) {
+      studyStatus.textContent = 'Failed to generate. Check console for details.';
+      console.error(err);
+    }
+  });
+
+  function renderStudyMaterial(data) {
+    studyEmptyState.style.display = 'none';
+    studyResults.style.display = 'block';
+    renderMcqs(data.mcqs || []);
+    currentFlashcards = data.flashcards || [];
+    flashcardIndex = 0;
+    renderFlashcard();
+    switchStudyTab('mcq');
+  }
+
+  function switchStudyTab(tab) {
+    tabMcq.classList.toggle('active', tab === 'mcq');
+    tabFlashcards.classList.toggle('active', tab === 'flashcards');
+    mcqPanel.style.display = tab === 'mcq' ? 'block' : 'none';
+    flashcardPanel.style.display = tab === 'flashcards' ? 'block' : 'none';
+  }
+  tabMcq.addEventListener('click', () => switchStudyTab('mcq'));
+  tabFlashcards.addEventListener('click', () => switchStudyTab('flashcards'));
+
+  function renderMcqs(mcqs) {
+    mcqPanel.innerHTML = mcqs.map((q, qi) => `
+      <div class="mcq-card">
+        <div class="mcq-question">${qi + 1}. ${escapeHtml(q.question)}</div>
+        ${q.options.map((opt, oi) => `
+          <button class="mcq-option" onclick="answerMcq(this, ${qi}, ${oi}, ${q.correct_index})">${escapeHtml(opt)}</button>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  window.answerMcq = function(btn, qIndex, chosenIndex, correctIndex) {
+    const card = btn.closest('.mcq-card');
+    const options = card.querySelectorAll('.mcq-option');
+    options.forEach((opt, i) => {
+      opt.disabled = true;
+      if (i === correctIndex) opt.classList.add('correct');
+      else if (i === chosenIndex) opt.classList.add('incorrect');
+    });
+  };
+
+  function renderFlashcard() {
+    if (currentFlashcards.length === 0) {
+      flashcardPanel.innerHTML = '<div class="empty-state">No flashcards available.</div>';
+      return;
+    }
+    const card = currentFlashcards[flashcardIndex];
+    flashcardPanel.innerHTML = `
+      <div class="flashcard" id="flashcardFace">${escapeHtml(card.front)}</div>
+      <div class="flashcard-nav">
+        <button class="action-btn" id="flashcardPrev">\u2190 Prev</button>
+        <span>${flashcardIndex + 1} / ${currentFlashcards.length} \u2014 click card to flip</span>
+        <button class="action-btn" id="flashcardNext">Next \u2192</button>
+      </div>
+    `;
+    let showingBack = false;
+    document.getElementById('flashcardFace').addEventListener('click', function() {
+      showingBack = !showingBack;
+      this.textContent = showingBack ? card.back : card.front;
+    });
+    document.getElementById('flashcardPrev').addEventListener('click', () => {
+      flashcardIndex = (flashcardIndex - 1 + currentFlashcards.length) % currentFlashcards.length;
+      renderFlashcard();
+    });
+    document.getElementById('flashcardNext').addEventListener('click', () => {
+      flashcardIndex = (flashcardIndex + 1) % currentFlashcards.length;
+      renderFlashcard();
+    });
+  }
+</script>
+
+</body>
+</html>

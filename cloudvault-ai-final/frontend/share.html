@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudVault AI — Shared File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a10;
+    --glass: rgba(16, 28, 38, 0.55);
+    --border: rgba(0, 229, 255, 0.16);
+    --cyan: #22e2ff;
+    --text: #d9f4f9;
+    --text-dim: #6d8994;
+    --danger: #ff6b7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(0,229,255,0.07), transparent), var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px;
+    max-width: 480px;
+    width: 100%;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    margin: 0 0 18px;
+    word-break: break-word;
+  }
+  .summary {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0.85;
+    white-space: pre-wrap;
+    margin-bottom: 24px;
+  }
+  button {
+    background: var(--cyan);
+    color: #04141a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button:hover { background: #6febff; }
+  .error { color: var(--danger); font-size: 14px; }
+  .loading { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="eyebrow">// cloudvault ai — shared file</div>
+  <div class="loading" id="content">Loading shared file…</div>
+</div>
+
+<script>
+  const API_BASE = 'https://9ew9unihk5.execute-api.ap-southeast-2.amazonaws.com';
+
+  async function loadShare() {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('id');
+    const content = document.getElementById('content');
+
+    if (!shareId) {
+      content.innerHTML = '<div class="error">No share link provided.</div>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/shared-file?share_id=${encodeURIComponent(shareId)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        content.innerHTML = `<div class="error">${data.error || 'This link is invalid or has expired.'}</div>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <h1>${escapeHtml(data.filename)}</h1>
+        ${data.summary ? `<div class="summary">${escapeHtml(data.summary)}</div>` : ''}
+        <button id="downloadBtn">Download</button>
+      `;
+      document.getElementById('downloadBtn').addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = data.downloadUrl;
+        a.download = data.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+    } catch (err) {
+      content.innerHTML = '<div class="error">Could not load this shared file.</div>';
+      console.error(err);
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  loadShare();
+</script>
+
+</body>
+</html>
