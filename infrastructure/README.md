@@ -24,18 +24,19 @@ run that up quickly. Log groups keep 14 days.
 ## Region and where data lives
 
 Everything is created in Sydney (`ap-southeast-2`) unless `aws_region` says
-otherwise. Files, document records, accounts, the functions, Textract and the
-model calls all stay in that region.
+otherwise. Files, document records, accounts and the functions stay in that
+region.
 
 CloudFront is the one global piece. The origin bucket is in Sydney, and the
 `PriceClass_200` setting serves from edge locations that include India.
 
-`bedrock_model_id` defaults to the plain Nova Lite model, called in the same
-region. If Bedrock rejects that ID in the chosen region, set it to the
-cross-region profile instead (`apac.amazon.nova-lite-v1:0`), after checking the
-ID under Cross-region inference in the Bedrock console. The profile can run the
-model in another Asia Pacific region, and an organisation policy that limits
-regions can block it.
+`bedrock_model_id` defaults to the cross-region Nova Lite profile
+(`apac.amazon.nova-lite-v1:0`). Bedrock may run the model in another Asia
+Pacific region, so the text sent for summaries, chat and study material can be
+processed outside Sydney. The profile has its own daily token quota, which is
+usually higher than the in-region model's on a new account. Set the variable to
+`amazon.nova-lite-v1:0` to keep the model calls in the region, if the quota
+allows it. An organisation policy that limits regions can block the profile.
 
 ## One-time setup
 
