@@ -1,8 +1,9 @@
 import json
+import os
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-folders_table = dynamodb.Table('cloudvault-folders')
+folders_table = dynamodb.Table(os.environ['FOLDERS_TABLE'])
 
 def lambda_handler(event, context):
     claims = event['requestContext']['authorizer']['jwt']['claims']

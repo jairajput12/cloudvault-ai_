@@ -1,4 +1,5 @@
 import json
+import os
 import boto3
 import uuid
 import base64
@@ -7,9 +8,10 @@ from datetime import datetime
 
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
-bedrock = boto3.client('bedrock-runtime', region_name='ap-southeast-2')
-textract = boto3.client('textract', region_name='ap-southeast-2')
-table = dynamodb.Table('cloudvault-documents')
+bedrock = boto3.client('bedrock-runtime')
+textract = boto3.client('textract')
+MODEL_ID = os.environ.get('MODEL_ID', 'amazon.nova-lite-v1:0')
+table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
 
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
 UNSUPPORTED_IMAGE_EXTENSIONS = {'.heic', '.heif'}
@@ -133,7 +135,7 @@ def summarize_image(bucket_name, s3_key):
     fmt = 'jpeg' if ext in ('jpg', 'jpeg') else ext
 
     response = bedrock.invoke_model(
-        modelId='amazon.nova-lite-v1:0',
+        modelId=MODEL_ID,
         body=json.dumps({
             'messages': [{
                 'role': 'user',
@@ -151,7 +153,7 @@ def summarize_image(bucket_name, s3_key):
 
 def call_nova_text(prompt):
     response = bedrock.invoke_model(
-        modelId='amazon.nova-lite-v1:0',
+        modelId=MODEL_ID,
         body=json.dumps({
             'messages': [{'role': 'user', 'content': [{'text': prompt}]}],
             'inferenceConfig': {'maxTokens': 500}

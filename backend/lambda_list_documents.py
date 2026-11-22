@@ -1,10 +1,11 @@
 import json
+import os
 import boto3
 from decimal import Decimal
 from boto3.dynamodb.conditions import Attr
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('cloudvault-documents')
+table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
 
 def decimal_default(obj):
     if isinstance(obj, Decimal):

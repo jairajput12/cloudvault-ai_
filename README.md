@@ -62,7 +62,7 @@ Browser (frontend/index.html)
         actual file bytes; ContentType is pinned to match on both ends,
         or S3 rejects the signature)
 
-Amazon S3 (cloudvault-ai-jai-2026, private, per-user key prefix)
+Amazon S3 (uploads bucket, private, per-user key prefix)
     |
     |-- S3 Event Notification (object create)
             |
@@ -81,16 +81,33 @@ Amazon S3 (cloudvault-ai-jai-2026, private, per-user key prefix)
 
 Public share page: frontend/share.html (separate static file, no login,
 calls /shared-file to fetch a fresh short-lived download link)
+
+Hosting: the frontend sits in a private S3 bucket behind CloudFront (HTTPS).
 ```
 
 ## Folder structure
 
 - `frontend/index.html` — the entire app UI. Plain HTML/JS, no build step,
-  no framework. Deploy via S3 static website hosting.
+  no framework. It reads the API address and Cognito client from
+  `config.js`, which the deploy pipeline writes (see `config.example.js`).
 - `frontend/share.html` — the public page a share link opens.
-- `backend/` — one file per Lambda function (see table below).
-- `infrastructure/` — IAM policy documents and notes on why each is scoped
-  the way it is.
+- `backend/` — one file per Lambda function (see table below). Table names,
+  the bucket, the site URL and the model ID come from environment variables
+  set by Terraform.
+- `infrastructure/` — Terraform for the whole stack, and `bootstrap/` for the
+  one-time state bucket and GitHub sign-in role. See
+  [infrastructure/README.md](infrastructure/README.md).
+- `.github/workflows/` — `deploy.yml` (plan on pull requests, apply and
+  publish on `main`) and `destroy.yml` (tear everything down).
+- `docs/iam/` — the IAM policies the original console-built stack used, kept
+  for reference. Terraform defines the live ones in `infrastructure/iam.tf`.
+
+## Deploying
+
+Deployment is a push to `main`. The pipeline applies the Terraform, writes
+`frontend/config.js` from the outputs, syncs the frontend to S3 and invalidates
+CloudFront. Setup (a one-time bootstrap and three repository variables) is in
+[infrastructure/README.md](infrastructure/README.md).
 
 ## Lambda functions
 
@@ -113,7 +130,9 @@ calls /shared-file to fetch a fresh short-lived download link)
 
 | Service | Purpose |
 |---|---|
-| S3 | File storage + static website hosting for the frontend |
+| S3 | File storage, and the origin for the frontend |
+| CloudFront | HTTPS in front of the frontend |
+| Terraform + GitHub Actions | Infrastructure as code and the deploy pipeline |
 | Lambda (Python 3.12) | All backend logic |
 | API Gateway (HTTP API) | Exposes Lambda functions as REST endpoints |
 | DynamoDB | Documents, folders, and shares metadata |

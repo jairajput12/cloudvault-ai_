@@ -1,8 +1,9 @@
 import json
+import os
 import boto3
 
-s3 = boto3.client('s3', region_name='ap-southeast-2')
-BUCKET_NAME = 'cloudvault-ai-jai-2026'
+s3 = boto3.client('s3')
+BUCKET_NAME = os.environ['UPLOADS_BUCKET']
 
 def lambda_handler(event, context):
     # The authorizer already verified this token; 'sub' is the permanent,

@@ -1,10 +1,11 @@
 import json
+import os
 import boto3
 
-s3 = boto3.client('s3', region_name='ap-southeast-2')
+s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('cloudvault-documents')
-BUCKET_NAME = 'cloudvault-ai-jai-2026'
+table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
+BUCKET_NAME = os.environ['UPLOADS_BUCKET']
 
 def lambda_handler(event, context):
     claims = event['requestContext']['authorizer']['jwt']['claims']

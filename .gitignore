@@ -1,0 +1,16 @@
+# Terraform
+infrastructure/**/.terraform/
+infrastructure/build/
+infrastructure/plan.txt
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Written by the deploy pipeline from the Terraform outputs
+frontend/config.js
+
+# Python
+__pycache__/
+*.pyc
