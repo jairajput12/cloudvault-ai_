@@ -1,0 +1,38 @@
+name: Logs
+
+# Prints the recent log lines of every CloudVault Lambda, for debugging.
+# Manual only. Uses the same deploy role and `poc` environment as the deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "How many minutes back to read"
+        required: true
+        default: "60"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  logs:
+    name: Recent Lambda logs
+    runs-on: ubuntu-latest
+    environment: poc
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read the logs
+        env:
+          MINUTES: ${{ inputs.minutes }}
+        run: |
+          for name in generate-upload-url upload-handler list-documents get-download-url delete-document \
+                      update-document create-folder list-folders delete-folder create-share \
+                      get-shared-file chat-with-document ask-assistant generate-study-material; do
+            echo "=== cloudvault-poc-$name"
+            aws logs tail "/aws/lambda/cloudvault-poc-$name" --since "${MINUTES}m" --format short 2>&1 | tail -n 40
+          done
