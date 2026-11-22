@@ -49,15 +49,12 @@ Respond with ONLY valid JSON, no markdown formatting, no code fences, in exactly
 Study material:
 {context_text[:6000]}"""
 
-    response = bedrock.invoke_model(
+    response = bedrock.converse(
         modelId=MODEL_ID,
-        body=json.dumps({
-            'messages': [{'role': 'user', 'content': [{'text': prompt}]}],
-            'inferenceConfig': {'maxTokens': 1500}
-        })
+        messages=[{'role': 'user', 'content': [{'text': prompt}]}],
+        inferenceConfig={'maxTokens': 1500}
     )
-    response_body = json.loads(response['body'].read())
-    raw_text = response_body['output']['message']['content'][0]['text']
+    raw_text = response['output']['message']['content'][0]['text']
 
     # Models sometimes wrap JSON in ```json fences despite instructions -
     # strip those defensively before parsing.

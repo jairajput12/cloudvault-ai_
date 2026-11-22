@@ -61,15 +61,12 @@ def lambda_handler(event, context):
 
     messages.append({'role': 'user', 'content': [{'text': question}]})
 
-    response = bedrock.invoke_model(
+    response = bedrock.converse(
         modelId=MODEL_ID,
-        body=json.dumps({
-            'messages': messages,
-            'inferenceConfig': {'maxTokens': 500}
-        })
+        messages=messages,
+        inferenceConfig={'maxTokens': 500}
     )
-    response_body = json.loads(response['body'].read())
-    answer = response_body['output']['message']['content'][0]['text']
+    answer = response['output']['message']['content'][0]['text']
 
     return {
         'statusCode': 200,

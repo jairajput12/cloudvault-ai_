@@ -136,7 +136,7 @@ def summarize_document(bucket_name, s3_key, file_type):
 
     trimmed = text_content[:8000]
     prompt = f"Summarize the following document in 3-4 sentences, then list 3 key points:\n\n{trimmed}"
-    summary = call_nova_text(prompt)
+    summary = call_model_text(prompt)
     return summary, text_content
 
 
@@ -162,35 +162,28 @@ def extract_pdf_text(bucket_name, s3_key):
 def summarize_image(bucket_name, s3_key):
     file_obj = s3.get_object(Bucket=bucket_name, Key=s3_key)
     image_bytes = file_obj['Body'].read()
-    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
 
     ext = get_extension(s3_key).replace('.', '')
     fmt = 'jpeg' if ext in ('jpg', 'jpeg') else ext
 
-    response = bedrock.invoke_model(
+    response = bedrock.converse(
         modelId=MODEL_ID,
-        body=json.dumps({
-            'messages': [{
-                'role': 'user',
-                'content': [
-                    {'image': {'format': fmt, 'source': {'bytes': image_b64}}},
-                    {'text': 'Describe this image in 2-3 sentences, then list 3 tags for it (objects, scene, or theme).'}
-                ]
-            }],
-            'inferenceConfig': {'maxTokens': 400}
-        })
+        messages=[{
+            'role': 'user',
+            'content': [
+                {'image': {'format': fmt, 'source': {'bytes': image_bytes}}},
+                {'text': 'Describe this image in 2-3 sentences, then list 3 tags for it (objects, scene, or theme).'}
+            ]
+        }],
+        inferenceConfig={'maxTokens': 400}
     )
-    response_body = json.loads(response['body'].read())
-    return response_body['output']['message']['content'][0]['text']
+    return response['output']['message']['content'][0]['text']
 
 
-def call_nova_text(prompt):
-    response = bedrock.invoke_model(
+def call_model_text(prompt):
+    response = bedrock.converse(
         modelId=MODEL_ID,
-        body=json.dumps({
-            'messages': [{'role': 'user', 'content': [{'text': prompt}]}],
-            'inferenceConfig': {'maxTokens': 500}
-        })
+        messages=[{'role': 'user', 'content': [{'text': prompt}]}],
+        inferenceConfig={'maxTokens': 500}
     )
-    response_body = json.loads(response['body'].read())
-    return response_body['output']['message']['content'][0]['text']
+    return response['output']['message']['content'][0]['text']

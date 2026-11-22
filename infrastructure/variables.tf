@@ -25,7 +25,7 @@ variable "bedrock_region" {
 variable "bedrock_model_id" {
   description = "Bedrock model or inference profile the Lambdas call in bedrock_region: a model ID, or a cross-region profile ID such as us.amazon.nova-pro-v1:0. The model must support text, images and PDF documents. Calling the plain model ID uses the account's on-demand token quota; a profile uses the cross-region one, which can be zero on a new account. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
   type        = string
-  default     = "amazon.nova-pro-v1:0"
+  default     = "us.amazon.nova-pro-v1:0"
 }
 
 variable "log_retention_days" {
