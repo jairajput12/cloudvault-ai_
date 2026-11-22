@@ -36,9 +36,10 @@ The model calls go to `bedrock_region`, which defaults to `us-west-2`. Bedrock
 daily token quotas are set per account and region, and a new account can have
 zero in most of them; this account has quota in us-west-2 only. The text sent
 for summaries, chat, PDF reading and study material therefore leaves Sydney.
-`bedrock_model_id` (default `us.amazon.nova-pro-v1:0`, the US cross-region
-profile for Nova Pro) can be any Bedrock model that takes text, images and PDF
-documents. To find where an account has quota, list the `tokens per day` rows
+`bedrock_model_id` (default `amazon.nova-pro-v1:0`, called directly in that
+region) can be any Bedrock model that takes text, images and PDF documents. A
+cross-region profile ID such as `us.amazon.nova-pro-v1:0` counts against a
+separate quota that can be zero on a new account. To find where an account has quota, list the `tokens per day` rows
 with `aws service-quotas list-service-quotas --service-code bedrock --region
 <region>`. An organisation policy that limits regions can block a region.
 
