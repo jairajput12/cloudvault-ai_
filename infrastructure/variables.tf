@@ -17,15 +17,15 @@ variable "environment" {
 }
 
 variable "bedrock_region" {
-  description = "Region the model calls go to. Bedrock daily token quotas are per account and region, and us-east-1 usually has the most headroom on a new account. The text sent to the model leaves the main region when this differs from aws_region."
+  description = "Region the model calls go to. Bedrock daily token quotas are per account and region, and a new account can have zero in most of them. us-west-2 is the region where this account has quota. The text sent to the model leaves the main region when this differs from aws_region."
   type        = string
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 variable "bedrock_model_id" {
-  description = "Bedrock model or inference profile the Lambdas call in bedrock_region: a model ID, or a cross-region profile ID such as us.amazon.nova-lite-v1:0. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
+  description = "Bedrock model or inference profile the Lambdas call in bedrock_region: a model ID, or a cross-region profile ID such as us.amazon.nova-pro-v1:0. The model must support text, images and PDF documents. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
   type        = string
-  default     = "amazon.nova-lite-v1:0"
+  default     = "us.amazon.nova-pro-v1:0"
 }
 
 variable "log_retention_days" {

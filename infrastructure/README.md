@@ -17,10 +17,11 @@ applies it and publishes the frontend on every push to `main`.
 
 Everything bills per use (Lambda, DynamoDB, API Gateway, Cognito, CloudFront all
 have free tiers that cover a POC), so an idle stack costs close to nothing. The
-spend that scales with use is Bedrock (Nova Lite, roughly $0.06 per million
-input tokens and $0.24 per million output tokens; check current pricing), and
-the API is throttled (`api_throttle_rate`, `api_throttle_burst`) so a public
-link cannot run that up quickly. Log groups keep 14 days.
+spend that scales with use is Bedrock (Nova Pro, roughly $0.80 per million
+input tokens and $3.20 per million output tokens, so about half a cent for a
+typical summary; check current pricing), and the API is throttled
+(`api_throttle_rate`, `api_throttle_burst`) so a public link cannot run that up
+quickly. Log groups keep 14 days.
 
 ## Region and where data lives
 
@@ -31,13 +32,15 @@ region.
 CloudFront is the one global piece. The origin bucket is in Sydney, and the
 `PriceClass_200` setting serves from edge locations that include India.
 
-The model calls go to `bedrock_region`, which defaults to `us-east-1`. Bedrock
-daily token quotas are set per account and region, and a new account often has
-none left in its home region. The text sent for summaries, chat, PDF reading and
-study material therefore leaves Sydney. Set `bedrock_region` to `aws_region`
-to keep it in the region, if the quota there allows it. `bedrock_model_id`
-(default `amazon.nova-lite-v1:0`) can be a cross-region profile ID instead. An
-organisation policy that limits regions can block either.
+The model calls go to `bedrock_region`, which defaults to `us-west-2`. Bedrock
+daily token quotas are set per account and region, and a new account can have
+zero in most of them; this account has quota in us-west-2 only. The text sent
+for summaries, chat, PDF reading and study material therefore leaves Sydney.
+`bedrock_model_id` (default `us.amazon.nova-pro-v1:0`, the US cross-region
+profile for Nova Pro) can be any Bedrock model that takes text, images and PDF
+documents. To find where an account has quota, list the `tokens per day` rows
+with `aws service-quotas list-service-quotas --service-code bedrock --region
+<region>`. An organisation policy that limits regions can block a region.
 
 ## One-time setup
 
