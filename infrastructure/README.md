@@ -23,27 +23,26 @@ run that up quickly. Log groups keep 14 days.
 
 ## Region and where data lives
 
-Everything is created in Mumbai (`ap-south-1`) unless `aws_region` says
-otherwise. Files, document records, accounts, the functions and Textract all
-stay in that region.
+Everything is created in Sydney (`ap-southeast-2`) unless `aws_region` says
+otherwise. Files, document records, accounts, the functions, Textract and the
+model calls all stay in that region.
 
-Two things sit outside it:
+CloudFront is the one global piece. The origin bucket is in Sydney, and the
+`PriceClass_200` setting serves from edge locations that include India.
 
-- **Bedrock.** Mumbai serves Nova Lite through a cross-region inference
-  profile (`apac.amazon.nova-lite-v1:0`, set in `bedrock_model_id`), which can
-  run the model in another Asia Pacific region. The text sent to the model for
-  summaries, chat and study material is processed there.
-- **CloudFront.** It is a global service. The origin bucket is in Mumbai, and
-  the `PriceClass_200` setting serves from edge locations that include India.
-
-Check the profile ID in the Bedrock console (Cross-region inference) before the
-first deploy. If it differs, set `bedrock_model_id` to the ID shown there.
+`bedrock_model_id` defaults to the plain Nova Lite model, called in the same
+region. If Bedrock rejects that ID in the chosen region, set it to the
+cross-region profile instead (`apac.amazon.nova-lite-v1:0`), after checking the
+ID under Cross-region inference in the Bedrock console. The profile can run the
+model in another Asia Pacific region, and an organisation policy that limits
+regions can block it.
 
 ## One-time setup
 
 The pipeline needs somewhere to keep state and a role to sign in as. Both come
-from `bootstrap/`, which a person with admin rights in the AWS account runs once
-from their own machine or from AWS CloudShell:
+from `bootstrap/`, which a person with admin rights in the AWS account runs to
+create them. They then stay in place, and every later deployment uses them with
+no further AWS login. It can be run from a machine or from AWS CloudShell:
 
 ```bash
 cd infrastructure/bootstrap

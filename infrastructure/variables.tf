@@ -1,7 +1,7 @@
 variable "aws_region" {
-  description = "Region everything is deployed to. Mumbai (ap-south-1) by default. Bedrock, Textract and the Nova model must be available here."
+  description = "Region everything is deployed to. Sydney (ap-southeast-2) by default. Bedrock, Textract and the Nova model must be available here."
   type        = string
-  default     = "ap-south-1"
+  default     = "ap-southeast-2"
 }
 
 variable "project" {
@@ -17,9 +17,9 @@ variable "environment" {
 }
 
 variable "bedrock_model_id" {
-  description = "Bedrock model or inference profile the Lambdas call. Mumbai serves Nova Lite through the cross-region APAC profile, so the default is the profile ID. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
+  description = "Bedrock model or inference profile the Lambdas call. Either a model ID or a cross-region profile ID such as apac.amazon.nova-lite-v1:0 (use that if the plain ID is not available in the region). A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
   type        = string
-  default     = "apac.amazon.nova-lite-v1:0"
+  default     = "amazon.nova-lite-v1:0"
 }
 
 variable "log_retention_days" {
