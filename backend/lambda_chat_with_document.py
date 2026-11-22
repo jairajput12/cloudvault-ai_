@@ -1,9 +1,11 @@
 import json
+import os
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('cloudvault-documents')
-bedrock = boto3.client('bedrock-runtime', region_name='ap-southeast-2')
+table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
+bedrock = boto3.client('bedrock-runtime')
+MODEL_ID = os.environ.get('MODEL_ID', 'amazon.nova-lite-v1:0')
 
 def lambda_handler(event, context):
     claims = event['requestContext']['authorizer']['jwt']['claims']
@@ -60,7 +62,7 @@ def lambda_handler(event, context):
     messages.append({'role': 'user', 'content': [{'text': question}]})
 
     response = bedrock.invoke_model(
-        modelId='amazon.nova-lite-v1:0',
+        modelId=MODEL_ID,
         body=json.dumps({
             'messages': messages,
             'inferenceConfig': {'maxTokens': 500}

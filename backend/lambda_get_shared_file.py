@@ -1,12 +1,13 @@
 import json
+import os
 import time
 import boto3
 
-s3 = boto3.client('s3', region_name='ap-southeast-2')
+s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
-documents_table = dynamodb.Table('cloudvault-documents')
-shares_table = dynamodb.Table('cloudvault-shares')
-BUCKET_NAME = 'cloudvault-ai-jai-2026'
+documents_table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
+shares_table = dynamodb.Table(os.environ['SHARES_TABLE'])
+BUCKET_NAME = os.environ['UPLOADS_BUCKET']
 
 def lambda_handler(event, context):
     # NOTE: this route has NO authorizer attached - it's meant to be

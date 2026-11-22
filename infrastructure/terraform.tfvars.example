@@ -1,0 +1,9 @@
+# For runs from your own machine. Copy to terraform.tfvars (git-ignored) to
+# override a default. The pipeline uses the defaults in variables.tf, so change
+# those to change what gets deployed.
+
+# aws_region         = "ap-southeast-2"
+# environment        = "poc"
+# extra_cors_origins = ["http://localhost:8080"]
+# api_throttle_rate  = 10
+# api_throttle_burst = 20

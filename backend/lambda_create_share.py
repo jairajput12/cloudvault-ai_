@@ -1,14 +1,15 @@
 import json
+import os
 import boto3
 import uuid
 import time
 
 dynamodb = boto3.resource('dynamodb')
-documents_table = dynamodb.Table('cloudvault-documents')
-shares_table = dynamodb.Table('cloudvault-shares')
+documents_table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
+shares_table = dynamodb.Table(os.environ['SHARES_TABLE'])
 
 # Where the public share-viewing page lives (see share.html)
-SITE_BASE = 'http://cloudvault-ai-site-jai-2026.s3-website-ap-southeast-2.amazonaws.com'
+SITE_BASE = os.environ['SITE_URL'].rstrip('/')
 
 def lambda_handler(event, context):
     claims = event['requestContext']['authorizer']['jwt']['claims']
