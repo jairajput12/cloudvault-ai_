@@ -1,0 +1,30 @@
+name: Smoke test
+
+# Runs scripts/smoke_test.py against the deployed stack: a throwaway user uploads
+# files, waits for the AI summaries, chats, shares and deletes. Manual only.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  smoke:
+    name: End-to-end check
+    runs-on: ubuntu-latest
+    environment: poc
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run the smoke test
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: python3 scripts/smoke_test.py
