@@ -1156,23 +1156,24 @@
   const STALL_MS = 5 * 60 * 1000;
 
   function isProcessing(doc) {
-    if (doc.status === 'summarized' || !AI_TYPES.includes(doc.file_type || 'other')) return false;
+    if (doc.status === 'summarized' || doc.status === 'failed' || !AI_TYPES.includes(doc.file_type || 'other')) return false;
     return Date.now() - parseUtc(doc.upload_date).getTime() < STALL_MS;
   }
 
   function statusKind(doc) {
     if (doc.status === 'summarized') return 'summarized';
+    if (doc.status === 'failed') return 'failed';
     if (!AI_TYPES.includes(doc.file_type || 'other')) return 'stored';
     return isProcessing(doc) ? 'processing' : 'stalled';
   }
 
-  const STATUS_TEXT = { summarized: 'Summarized', processing: 'Processing', stored: 'Stored', stalled: 'No summary' };
+  const STATUS_TEXT = { summarized: 'Summarized', processing: 'Processing', stored: 'Stored', stalled: 'No summary', failed: 'No summary' };
 
   function statusLabel(doc) { return STATUS_TEXT[statusKind(doc)]; }
 
   function statusBadge(doc) {
     const kind = statusKind(doc);
-    const cls = kind === 'processing' ? 'uploaded' : kind;
+    const cls = kind === 'processing' ? 'uploaded' : kind === 'failed' ? 'stalled' : kind;
     return `<span class="badge ${cls}">${STATUS_TEXT[kind]}</span>`;
   }
 
@@ -1259,6 +1260,7 @@
           </div>
         </div>
         ${isSummarized ? `<div class="doc-summary">${escapeHtml(doc.summary)}</div>` : ''}
+        ${doc.status === 'failed' && doc.ai_error ? `<div class="doc-summary" style="color: var(--amber);">${escapeHtml(doc.ai_error)}</div>` : ''}
         <div class="doc-actions">
           <button class="action-btn" onclick="downloadDoc('${doc.document_id}')">Download</button>
           ${isSummarized ? `<button class="action-btn" onclick="openChat('${doc.document_id}', '${escapeHtml(doc.filename)}')">Chat</button>` : ''}

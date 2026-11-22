@@ -102,8 +102,27 @@ def lambda_handler(event, context):
             )
     except Exception as e:
         print(f"AI processing failed: {str(e)}")
+        # Record the failure so the page can say so, instead of showing "Processing" forever.
+        table.update_item(
+            Key={'document_id': document_id},
+            UpdateExpression='SET #s = :status, ai_error = :message',
+            ExpressionAttributeNames={'#s': 'status'},
+            ExpressionAttributeValues={
+                ':status': 'failed',
+                ':message': friendly_error(e)
+            }
+        )
 
     return {'statusCode': 200, 'body': json.dumps(f'Document {document_id} processed')}
+
+
+def friendly_error(error):
+    text = str(error)
+    if 'ThrottlingException' in text or 'Too many tokens' in text:
+        return "The AI service has reached its limit for this account, so there is no summary yet. Your file is saved."
+    if 'AccessDenied' in text and 'textract' in text.lower():
+        return "Reading PDF text is not permitted in this AWS account, so there is no summary. Your file is saved."
+    return "The AI could not process this file. Your file is saved."
 
 
 def summarize_document(bucket_name, s3_key, file_type):

@@ -219,7 +219,7 @@ def main():
         while time.time() < deadline:
             status, _, data = call("GET", "/documents")
             documents = {d["filename"]: d for d in data if isinstance(d, dict)} if status == 200 else {}
-            if all(documents.get(n, {}).get("status") == "summarized" for n in wanted):
+            if all(documents.get(n, {}).get("status") in ("summarized", "failed") for n in wanted):
                 break
             time.sleep(6)
         for filename, _ in FILES:
@@ -228,7 +228,7 @@ def main():
                 created_docs.append(doc["document_id"])
             check("'%s' appears in the library with an AI summary" % filename,
                   bool(doc) and doc.get("status") == "summarized" and bool(doc.get("summary")),
-                  ("status=%s" % doc.get("status")) if doc else "not in the library after 180s")
+                  ("status=%s %s" % (doc.get("status"), doc.get("ai_error", ""))) if doc else "not in the library after 180s")
         text_doc = documents.get("quarterly notes.txt")
         if text_doc and text_doc.get("summary"):
             print("    summary preview:", text_doc["summary"][:110].replace("\n", " "))
