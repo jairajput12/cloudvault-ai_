@@ -23,9 +23,9 @@ variable "bedrock_region" {
 }
 
 variable "bedrock_model_id" {
-  description = "Bedrock model or inference profile the Lambdas call in bedrock_region: a model ID, or a cross-region profile ID such as us.amazon.nova-pro-v1:0. The model must support text, images and PDF documents. Calling the plain model ID uses the account's on-demand token quota; a profile uses the cross-region one, which can be zero on a new account. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
+  description = "Bedrock model or inference profile the Lambdas call in bedrock_region: a model ID, or a cross-region profile ID such as us.anthropic.claude-sonnet-4-5-20250929-v1:0. The model must support text, images and PDF documents. Anthropic models need the account's one-time use-case form submitted in the Bedrock console. A regional prefix (apac., us., eu., global.) is stripped to find the underlying model for the IAM policy."
   type        = string
-  default     = "global.amazon.nova-2-lite-v1:0"
+  default     = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 
 variable "log_retention_days" {

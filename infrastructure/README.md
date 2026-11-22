@@ -17,9 +17,9 @@ applies it and publishes the frontend on every push to `main`.
 
 Everything bills per use (Lambda, DynamoDB, API Gateway, Cognito, CloudFront all
 have free tiers that cover a POC), so an idle stack costs close to nothing. The
-spend that scales with use is Bedrock (Nova Pro, roughly $0.80 per million
-input tokens and $3.20 per million output tokens, so about half a cent for a
-typical summary; check current pricing), and the API is throttled
+spend that scales with use is Bedrock (Claude Sonnet 4.5, roughly $3 per million
+input tokens and $15 per million output tokens, so about a cent and a half for
+a typical summary; check current pricing), and the API is throttled
 (`api_throttle_rate`, `api_throttle_burst`) so a public link cannot run that up
 quickly. Log groups keep 14 days.
 
@@ -34,15 +34,19 @@ CloudFront is the one global piece. The origin bucket is in Sydney, and the
 
 The model calls go to `bedrock_region`, which defaults to `us-west-2`. Bedrock
 daily token quotas are set per account and region, and a new account can have
-zero in most of them; this account has quota in us-west-2 only. The text sent
-for summaries, chat, PDF reading and study material therefore leaves Sydney.
-`bedrock_model_id` (default `us.amazon.nova-pro-v1:0`, the US cross-region
-profile; Nova Pro cannot be called directly in us-west-2) can be any Bedrock
-model that takes text, images and PDF documents. The functions call it through
-Bedrock's Converse API, so changing the model is a variable change. A
-cross-region profile counts against a quota separate from the on-demand one,
-and that quota can be zero on a new account. To find where an account has quota, list the `tokens per day` rows
-with `aws service-quotas list-service-quotas --service-code bedrock --region
+zero in most of them. This account has quota in us-west-2, and none for any
+Amazon Nova model. The text sent for summaries, chat, PDF reading and study
+material therefore leaves Sydney.
+
+`bedrock_model_id` (default `us.anthropic.claude-sonnet-4-5-20250929-v1:0`, the
+US cross-region profile for Claude Sonnet 4.5) can be any Bedrock model that
+takes text, images and PDF documents. The functions call it through Bedrock's
+Converse API, so changing the model is a variable change. Anthropic models need
+the account's one-time use-case form submitted in the Bedrock console before
+they answer; it can take up to 15 minutes to take effect.
+
+To find where an account has quota, list the `tokens per day` rows with
+`aws service-quotas list-service-quotas --service-code bedrock --region
 <region>`. An organisation policy that limits regions can block a region.
 
 ## One-time setup

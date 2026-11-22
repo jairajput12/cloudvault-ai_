@@ -14,9 +14,9 @@ everyone, with a genuine study superpower for students."
   per-user file isolation enforced server-side (not just hidden in the UI)
 - **Upload any file type** — dropped straight into S3 via a pre-signed URL
 - **AI processing on upload**, branching by file type:
-  - Images → Amazon Bedrock (Amazon Nova vision) generates a description + tags,
+  - Images → Amazon Bedrock (Claude vision) generates a description + tags,
     with a real thumbnail preview
-  - PDFs → Amazon Nova reads the document and extracts its text, then
+  - PDFs → Claude reads the document and extracts its text, then
     summarizes it
   - Plain text → read directly, then summarized
   - Anything else → stored as-is, no AI attempted
@@ -69,9 +69,9 @@ Amazon S3 (uploads bucket, private, per-user key prefix)
             |
             v
     lambda_upload_handler.py
-            |-- image  -> Bedrock Amazon Nova (vision) -> description + tags
-            |-- pdf    -> Amazon Nova reads the PDF -> extracted text -> Amazon Nova -> summary
-            |-- text   -> read directly -> Amazon Nova -> summary
+            |-- image  -> Bedrock Claude (vision) -> description + tags
+            |-- pdf    -> Claude reads the PDF -> extracted text -> Claude -> summary
+            |-- text   -> read directly -> Claude -> summary
             |-- other  -> stored only
             |
             v
@@ -137,7 +137,7 @@ CloudFront. Setup (a one-time bootstrap and three repository variables) is in
 | Lambda (Python 3.12) | All backend logic |
 | API Gateway (HTTP API) | Exposes Lambda functions as REST endpoints |
 | DynamoDB | Documents, folders, and shares metadata |
-| Amazon Bedrock (Amazon Nova) | AI summarization, vision, PDF reading, chat, study material |
+| Amazon Bedrock (Claude) | AI summarization, vision, PDF reading, chat, study material |
 | Amazon Cognito | User authentication |
 | IAM | Least-privilege roles scoped per resource |
 
