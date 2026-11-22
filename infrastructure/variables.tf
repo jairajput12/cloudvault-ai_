@@ -19,7 +19,7 @@ variable "environment" {
 variable "bedrock_model_id" {
   description = "Bedrock model or inference profile the Lambdas call: a model ID, or a cross-region profile ID such as apac.amazon.nova-lite-v1:0. The profile has its own, usually higher, daily token quota than the in-region model, which matters on a new account. A regional prefix (apac., us., eu.) is stripped to find the underlying model for the IAM policy."
   type        = string
-  default     = "apac.amazon.nova-lite-v1:0"
+  default     = "apac.amazon.nova-micro-v1:0"
 }
 
 variable "log_retention_days" {
