@@ -1,0 +1,48 @@
+name: Diagnose upload
+
+# Temporary. Asks the real Lambda for an upload URL, PUTs a file to it the way the
+# browser does, then reads the upload handler's log.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: poc
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Ask the real Lambda for an upload URL
+        run: |
+          echo '{"queryStringParameters":{"filename":"diagnose-test.txt"},"requestContext":{"authorizer":{"jwt":{"claims":{"sub":"diagnose-user"}}}}}' > event.json
+          aws lambda invoke --function-name cloudvault-poc-generate-upload-url --cli-binary-format raw-in-base64-out --payload file://event.json out.json > /dev/null
+          python3 - <<'PY'
+          import json, urllib.parse
+          out = json.load(open('out.json'))
+          print('lambda status:', out.get('statusCode'), out.get('errorMessage', ''))
+          url = json.loads(out['body'])['uploadUrl']
+          u = urllib.parse.urlparse(url)
+          print('host:', u.netloc)
+          print('path:', u.path)
+          print('query parameter names:', sorted(urllib.parse.parse_qs(u.query).keys()))
+          open('url.txt', 'w').write(url)
+          PY
+
+      - name: PUT a file with that URL, as the browser does
+        run: |
+          echo "hello cloudvault" > t.txt
+          curl -s -i -X PUT -H "Content-Type: application/octet-stream" --data-binary @t.txt "$(cat url.txt)" | head -n 12
+
+      - name: Did the upload trigger the handler?
+        run: |
+          sleep 25
+          aws logs tail /aws/lambda/cloudvault-poc-upload-handler --since 5m --format short | tail -n 30
+          aws s3 rm "s3://cloudvault-poc-uploads-656626444082/diagnose-user/diagnose-test.txt" || true
