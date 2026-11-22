@@ -7,7 +7,7 @@
 // When serving locally, add your origin (for example http://localhost:8080) to
 // extra_cors_origins in infrastructure/terraform.tfvars so the API accepts it.
 window.CLOUDVAULT_CONFIG = {
-  apiBase: "https://xxxxxxxxxx.execute-api.ap-southeast-2.amazonaws.com",
-  cognitoRegion: "ap-southeast-2",
+  apiBase: "https://xxxxxxxxxx.execute-api.ap-south-1.amazonaws.com",
+  cognitoRegion: "ap-south-1",
   cognitoClientId: "xxxxxxxxxxxxxxxxxxxxxxxxxx"
 };

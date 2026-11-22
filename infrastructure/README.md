@@ -21,11 +21,29 @@ spend that scales with use is Bedrock (Nova Lite) and Textract, and the API is
 throttled (`api_throttle_rate`, `api_throttle_burst`) so a public link cannot
 run that up quickly. Log groups keep 14 days.
 
+## Region and where data lives
+
+Everything is created in Mumbai (`ap-south-1`) unless `aws_region` says
+otherwise. Files, document records, accounts, the functions and Textract all
+stay in that region.
+
+Two things sit outside it:
+
+- **Bedrock.** Mumbai serves Nova Lite through a cross-region inference
+  profile (`apac.amazon.nova-lite-v1:0`, set in `bedrock_model_id`), which can
+  run the model in another Asia Pacific region. The text sent to the model for
+  summaries, chat and study material is processed there.
+- **CloudFront.** It is a global service. The origin bucket is in Mumbai, and
+  the `PriceClass_200` setting serves from edge locations that include India.
+
+Check the profile ID in the Bedrock console (Cross-region inference) before the
+first deploy. If it differs, set `bedrock_model_id` to the ID shown there.
+
 ## One-time setup
 
 The pipeline needs somewhere to keep state and a role to sign in as. Both come
 from `bootstrap/`, which a person with admin rights in the AWS account runs once
-from their own machine:
+from their own machine or from AWS CloudShell:
 
 ```bash
 cd infrastructure/bootstrap

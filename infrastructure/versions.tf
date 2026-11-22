@@ -39,4 +39,7 @@ locals {
   name_prefix = "${var.project}-${var.environment}"
   account_id  = data.aws_caller_identity.current.account_id
   region      = data.aws_region.current.region
+
+  # apac.amazon.nova-lite-v1:0 -> amazon.nova-lite-v1:0
+  base_model_id = replace(var.bedrock_model_id, "/^(apac|us|eu|global)[.]/", "")
 }

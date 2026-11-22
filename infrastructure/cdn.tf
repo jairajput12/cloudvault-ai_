@@ -1,5 +1,6 @@
-# HTTPS front door for the static site. The default *.cloudfront.net domain and
-# the cheapest price class keep this inside the free tier for a POC.
+# HTTPS front door for the static site. The default *.cloudfront.net domain keeps
+# this inside the free tier for a POC. PriceClass_200 is the cheapest class that
+# includes edge locations in India (PriceClass_100 is North America and Europe only).
 
 data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
@@ -20,7 +21,7 @@ resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   comment             = "${local.name_prefix} frontend"
   default_root_object = "index.html"
-  price_class         = "PriceClass_100"
+  price_class         = "PriceClass_200"
   http_version        = "http2and3"
 
   origin {
