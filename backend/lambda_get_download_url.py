@@ -1,8 +1,13 @@
 import json
 import os
 import boto3
+from botocore.config import Config
 
-s3 = boto3.client('s3')
+# Pre-signed URLs must use the bucket's regional address and Signature V4. The default
+# client signs with V2 against s3.amazonaws.com, which answers a new regional bucket
+# with a redirect that the browser's CORS check rejects.
+s3 = boto3.client('s3', region_name=os.environ['AWS_REGION'],
+                  config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'}))
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
 BUCKET_NAME = os.environ['UPLOADS_BUCKET']
