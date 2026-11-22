@@ -64,6 +64,13 @@ signs in with the role through GitHub's OIDC token.
 | `AWS_DEPLOY_ROLE_ARN` | `deploy_role_arn` |
 | `TF_STATE_BUCKET` | `state_bucket` |
 
+GitHub writes the repository into its sign-in token either by name
+(`repo:owner/name`) or, for newer repositories, with numeric IDs
+(`repo:owner@id/name@id`). The role trusts both exact forms. If a run fails with
+"Not authorized to perform sts:AssumeRoleWithWebIdentity", print the token's
+`sub` claim in a workflow step and set `github_subject_prefix` in `bootstrap/`
+to match it, then apply the bootstrap again.
+
 The deploy job runs in a GitHub environment called `poc`. Add required
 reviewers to it (Settings, Environments) if applies should wait for approval.
 

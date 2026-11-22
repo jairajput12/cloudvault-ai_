@@ -34,7 +34,19 @@ data "aws_caller_identity" "current" {}
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
-  github_sub = "repo:${var.github_repository}"
+
+  # GitHub puts the repo in the token's `sub` claim either by name
+  # (repo:owner/name) or, for newer repos, with the numeric owner and repo IDs
+  # (repo:owner@id/name@id). Both exact forms are trusted, never a wildcard.
+  github_subs = compact(["repo:${var.github_repository}", var.github_subject_prefix])
+
+  github_sub_patterns = flatten([
+    for prefix in local.github_subs : [
+      "${prefix}:pull_request",
+      "${prefix}:ref:refs/heads/main",
+      "${prefix}:environment:${var.environment}",
+    ]
+  ])
 }
 
 # ---- Terraform state ----
@@ -110,11 +122,7 @@ data "aws_iam_policy_document" "deploy_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        "${local.github_sub}:pull_request",
-        "${local.github_sub}:ref:refs/heads/main",
-        "${local.github_sub}:environment:${var.environment}",
-      ]
+      values   = local.github_sub_patterns
     }
   }
 }
