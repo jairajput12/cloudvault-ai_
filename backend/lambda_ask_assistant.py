@@ -5,7 +5,7 @@ from boto3.dynamodb.conditions import Attr
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
-bedrock = boto3.client('bedrock-runtime')
+bedrock = boto3.client('bedrock-runtime', region_name=os.environ.get('BEDROCK_REGION'))
 MODEL_ID = os.environ.get('MODEL_ID', 'amazon.nova-lite-v1:0')
 
 def lambda_handler(event, context):

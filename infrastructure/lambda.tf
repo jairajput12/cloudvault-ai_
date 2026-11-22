@@ -35,6 +35,7 @@ locals {
     UPLOADS_BUCKET  = aws_s3_bucket.uploads.bucket
     SITE_URL        = local.site_url
     MODEL_ID        = var.bedrock_model_id
+    BEDROCK_REGION  = var.bedrock_region
   }
 }
 

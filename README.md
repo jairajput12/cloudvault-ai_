@@ -16,7 +16,8 @@ everyone, with a genuine study superpower for students."
 - **AI processing on upload**, branching by file type:
   - Images → Amazon Bedrock (Nova Lite vision) generates a description + tags,
     with a real thumbnail preview
-  - PDFs → Amazon Textract extracts real text, then Nova Lite summarizes it
+  - PDFs → Nova Lite reads the document and extracts its text, then
+    summarizes it
   - Plain text → read directly, then summarized
   - Anything else → stored as-is, no AI attempted
 - **Chat with a document** — ask questions about one specific file, answered
@@ -69,7 +70,7 @@ Amazon S3 (uploads bucket, private, per-user key prefix)
             v
     lambda_upload_handler.py
             |-- image  -> Bedrock Nova Lite (vision) -> description + tags
-            |-- pdf    -> Textract -> extracted text -> Nova Lite -> summary
+            |-- pdf    -> Nova Lite reads the PDF -> extracted text -> Nova Lite -> summary
             |-- text   -> read directly -> Nova Lite -> summary
             |-- other  -> stored only
             |
@@ -136,16 +137,15 @@ CloudFront. Setup (a one-time bootstrap and three repository variables) is in
 | Lambda (Python 3.12) | All backend logic |
 | API Gateway (HTTP API) | Exposes Lambda functions as REST endpoints |
 | DynamoDB | Documents, folders, and shares metadata |
-| Amazon Bedrock (Nova Lite) | AI summarization, vision, chat, study material |
-| Amazon Textract | Real text extraction from PDFs |
+| Amazon Bedrock (Nova Lite) | AI summarization, vision, PDF reading, chat, study material |
 | Amazon Cognito | User authentication |
 | IAM | Least-privilege roles scoped per resource |
 
 ## Known limitations
 
-- **PDF text extraction** uses Textract's synchronous API, which only
-  supports single-page documents. Multi-page PDFs would need the async
-  Textract job API (start job, poll for completion).
+- **PDF reading** sends the whole file to the model, which accepts PDFs up
+  to about 4.5 MB. Larger files are stored but get no summary. Only the first
+  few pages' text (about 3,000 tokens) is kept for chat and study material.
 - **Video files** are stored but not yet AI-processed — would need frame
   extraction and/or audio transcription (Amazon Transcribe).
 - **HEIC/HEIF photos** (default iPhone format) get a friendly message

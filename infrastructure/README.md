@@ -17,9 +17,10 @@ applies it and publishes the frontend on every push to `main`.
 
 Everything bills per use (Lambda, DynamoDB, API Gateway, Cognito, CloudFront all
 have free tiers that cover a POC), so an idle stack costs close to nothing. The
-spend that scales with use is Bedrock (Nova Lite) and Textract, and the API is
-throttled (`api_throttle_rate`, `api_throttle_burst`) so a public link cannot
-run that up quickly. Log groups keep 14 days.
+spend that scales with use is Bedrock (Nova Lite, roughly $0.06 per million
+input tokens and $0.24 per million output tokens; check current pricing), and
+the API is throttled (`api_throttle_rate`, `api_throttle_burst`) so a public
+link cannot run that up quickly. Log groups keep 14 days.
 
 ## Region and where data lives
 
@@ -30,13 +31,13 @@ region.
 CloudFront is the one global piece. The origin bucket is in Sydney, and the
 `PriceClass_200` setting serves from edge locations that include India.
 
-`bedrock_model_id` defaults to the cross-region Nova Lite profile
-(`apac.amazon.nova-lite-v1:0`). Bedrock may run the model in another Asia
-Pacific region, so the text sent for summaries, chat and study material can be
-processed outside Sydney. The profile has its own daily token quota, which is
-usually higher than the in-region model's on a new account. Set the variable to
-`amazon.nova-lite-v1:0` to keep the model calls in the region, if the quota
-allows it. An organisation policy that limits regions can block the profile.
+The model calls go to `bedrock_region`, which defaults to `us-east-1`. Bedrock
+daily token quotas are set per account and region, and a new account often has
+none left in its home region. The text sent for summaries, chat, PDF reading and
+study material therefore leaves Sydney. Set `bedrock_region` to `aws_region`
+to keep it in the region, if the quota there allows it. `bedrock_model_id`
+(default `amazon.nova-lite-v1:0`) can be a cross-region profile ID instead. An
+organisation policy that limits regions can block either.
 
 ## One-time setup
 

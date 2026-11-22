@@ -46,22 +46,15 @@ data "aws_iam_policy_document" "lambda_access" {
     resources = ["${aws_s3_bucket.uploads.arn}/*"]
   }
 
-  # A cross-region profile needs the profile itself in this region plus the model
+  # A cross-region profile needs the profile itself in the Bedrock region plus the model
   # in whichever destination regions it routes to, so the model ARN's region is a wildcard.
   statement {
     sid     = "InvokeModel"
     actions = ["bedrock:InvokeModel"]
     resources = [
-      "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${var.bedrock_model_id}",
+      "arn:aws:bedrock:${var.bedrock_region}:${local.account_id}:inference-profile/${var.bedrock_model_id}",
       "arn:aws:bedrock:*::foundation-model/${local.base_model_id}",
     ]
-  }
-
-  # Textract has no resource-level permissions for this action.
-  statement {
-    sid       = "ReadPdfText"
-    actions   = ["textract:DetectDocumentText"]
-    resources = ["*"]
   }
 }
 

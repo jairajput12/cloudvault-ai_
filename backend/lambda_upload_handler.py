@@ -8,8 +8,7 @@ from datetime import datetime
 
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
-bedrock = boto3.client('bedrock-runtime')
-textract = boto3.client('textract')
+bedrock = boto3.client('bedrock-runtime', region_name=os.environ.get('BEDROCK_REGION'))
 MODEL_ID = os.environ.get('MODEL_ID', 'amazon.nova-lite-v1:0')
 table = dynamodb.Table(os.environ['DOCUMENTS_TABLE'])
 
@@ -120,8 +119,8 @@ def friendly_error(error):
     text = str(error)
     if 'ThrottlingException' in text or 'Too many tokens' in text:
         return "The AI service has reached its limit for this account, so there is no summary yet. Your file is saved."
-    if 'AccessDenied' in text and 'textract' in text.lower():
-        return "Reading PDF text is not permitted in this AWS account, so there is no summary. Your file is saved."
+    if 'ValidationException' in text and 'document' in text.lower():
+        return "This PDF could not be read by the AI (it may be too large or protected), so there is no summary. Your file is saved."
     return "The AI could not process this file. Your file is saved."
 
 
@@ -130,11 +129,7 @@ def summarize_document(bucket_name, s3_key, file_type):
         file_obj = s3.get_object(Bucket=bucket_name, Key=s3_key)
         text_content = file_obj['Body'].read().decode('utf-8', errors='ignore')
     else:
-        response = textract.detect_document_text(
-            Document={'S3Object': {'Bucket': bucket_name, 'Name': s3_key}}
-        )
-        lines = [b['Text'] for b in response['Blocks'] if b['BlockType'] == 'LINE']
-        text_content = '\n'.join(lines)
+        text_content = extract_pdf_text(bucket_name, s3_key)
 
     if not text_content.strip():
         return "No readable text was found in this document.", ''
@@ -143,6 +138,25 @@ def summarize_document(bucket_name, s3_key, file_type):
     prompt = f"Summarize the following document in 3-4 sentences, then list 3 key points:\n\n{trimmed}"
     summary = call_nova_text(prompt)
     return summary, text_content
+
+
+def extract_pdf_text(bucket_name, s3_key):
+    # Nova reads the PDF directly (all pages, up to the Converse size limit), so no
+    # separate OCR service is needed.
+    pdf_bytes = s3.get_object(Bucket=bucket_name, Key=s3_key)['Body'].read()
+    response = bedrock.converse(
+        modelId=MODEL_ID,
+        messages=[{
+            'role': 'user',
+            'content': [
+                {'document': {'format': 'pdf', 'name': 'document', 'source': {'bytes': pdf_bytes}}},
+                {'text': 'Return the text of this document exactly as written, with no commentary. '
+                         'If it has no readable text, return nothing.'}
+            ]
+        }],
+        inferenceConfig={'maxTokens': 3000}
+    )
+    return response['output']['message']['content'][0]['text']
 
 
 def summarize_image(bucket_name, s3_key):
